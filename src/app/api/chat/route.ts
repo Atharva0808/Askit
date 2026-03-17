@@ -1,0 +1,446 @@
+import { groq } from "@ai-sdk/groq";
+import { openai } from "@ai-sdk/openai";
+import { convertToCoreMessages, createDataStreamResponse, streamText, tool } from "ai";
+import { z } from "zod";
+import { createClient } from "@/lib/supabase/server";
+import { retrieveChunks } from "@/lib/rag/retrieve";
+import { listMCPTools, callMCPTool } from "@/lib/mcp/client";
+
+export const maxDuration = 60;
+
+export async function POST(req: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  let body: {
+    messages: { id?: string; role: string; content: string | unknown[] }[];
+    imageUrl?: string;
+    chatId?: string;
+    data?: Record<string, unknown>;
+  };
+
+  try {
+    body = await req.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid request body" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const { messages: rawMessages, chatId, data } = body;
+  const imageUrl = (data?.imageUrl as string) || body.imageUrl;
+
+  if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
+    return new Response(JSON.stringify({ error: "No messages provided" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const systemPrompt = `You are Askit, a helpful AI assistant with access to the user's documents and powerful tools.
+
+CAPABILITIES:
+- search_documents: Search the user's uploaded documents for relevant context (RAG)
+- web_fetch: Fetch and read content from any public URL/website
+- web_search: Search the web for current information. Use for recent events, facts, or when the user asks for "search" or "find" or "latest".
+- get_datetime: Get the current date and time
+
+GUIDELINES:
+- Use search_documents when the user asks about their uploaded documents or when you need to ground your answer in their data.
+- Use web_fetch when the user asks you to read, summarize, or analyze a web page.
+- Use web_search when the user asks for current information, recent news, or to search the web for a topic.
+- Use get_datetime when the user needs the current date/time or for any time-sensitive query.
+- You can understand images: the user may send an image; describe or answer based on it when relevant.
+- You can handle voice input: the user may speak to you; respond naturally.
+- Format responses in markdown for readability (use headings, lists, code blocks, bold, etc).
+- Be concise and accurate. Cite document chunks when you use them.
+- When presenting code, always use fenced code blocks with the language specified.`;
+
+  // Build core messages, stripping inline base64 image markdown so it doesn't
+  // confuse the text model. We send the image via the proper multimodal API.
+  const coreMessages = convertToCoreMessages(
+    rawMessages.map((m) => {
+      let c = m.content;
+      if (typeof c === "string") {
+        c = c.replace(/\n\n!\[Attached\]\(data:image\/[^)]+\)/g, "");
+      }
+      return { role: m.role, content: c };
+    }) as {
+      role: "user" | "assistant" | "system";
+      content: string;
+    }[]
+  );
+
+  // Determine if this is a vision request
+  const hasImage = !!imageUrl;
+
+  // If an image was attached, inject it into the last user message using the
+  // correct multipart content format expected by the AI SDK.
+  if (hasImage && coreMessages.length > 0) {
+    const last = coreMessages[coreMessages.length - 1];
+    if (last.role === "user") {
+      const userText =
+        (typeof last.content === "string" ? last.content : "") ||
+        "Describe this image in detail.";
+
+      // IMPORTANT: `new URL("data:...")` succeeds but many providers reject URL objects for data URLs.
+      // So we detect data URLs up front and pass them as plain strings.
+      const isDataUrl = imageUrl.startsWith("data:");
+      if (isDataUrl) {
+        // Convert data URL to base64 + mimeType (most reliable for OpenAI vision).
+        const m = /^data:([^;]+);base64,(.+)$/i.exec(imageUrl);
+        if (m) {
+          const [, mimeType, base64] = m;
+          const bytes = Uint8Array.from(Buffer.from(base64, "base64"));
+          (last as { content: unknown }).content = [
+            { type: "text" as const, text: userText },
+            { type: "image" as const, image: bytes, mimeType },
+          ];
+        } else {
+          // Fallback for unexpected data URL formats
+          (last as { content: unknown }).content = [
+            { type: "text" as const, text: userText },
+            { type: "image" as const, image: imageUrl },
+          ];
+        }
+      } else {
+        try {
+          (last as { content: unknown }).content = [
+            { type: "text" as const, text: userText },
+            { type: "image" as const, image: new URL(imageUrl) },
+          ];
+        } catch {
+          (last as { content: unknown }).content = [
+            { type: "text" as const, text: userText },
+            { type: "image" as const, image: imageUrl },
+          ];
+        }
+      }
+    }
+  }
+
+  // Groq Vision works best with isolated context (no tool history)
+  const messagesToSend = hasImage
+    ? [coreMessages[coreMessages.length - 1]]
+    : coreMessages;
+
+  // Proactive RAG injection: ensures "RAG works" even if the model doesn't tool-call.
+  if (!hasImage) {
+    const last = coreMessages[coreMessages.length - 1];
+    if (last?.role === "user" && typeof last.content === "string") {
+      const q = last.content.trim();
+      if (q) {
+        try {
+          const chunks = await retrieveChunks(user.id, q);
+          if (chunks.length > 0) {
+            const contextBlock = chunks
+              .map((c, i) => `[[chunk ${i + 1} | ${c.id}]]\n${c.content}`)
+              .join("\n\n");
+            messagesToSend.splice(messagesToSend.length - 1, 0, {
+              role: "system",
+              content:
+                "Relevant document context (use this if helpful; cite chunk ids you used):\n\n" +
+                contextBlock.slice(0, 12000),
+            });
+          }
+        } catch {
+          /* ignore rag errors */
+        }
+      }
+    }
+  }
+
+  // Persist the user message to the database
+  if (chatId) {
+    const lastUser = rawMessages[rawMessages.length - 1];
+    if (lastUser?.role === "user") {
+      const text =
+        typeof lastUser.content === "string"
+          ? lastUser.content
+          : Array.isArray(lastUser.content)
+            ? (lastUser.content as { text?: string }[])
+                .filter((p) => (p as { type?: string }).type === "text")
+                .map((p) => (p as { text?: string }).text ?? "")
+                .join("")
+            : "";
+      await supabase.from("messages").insert({
+        chat_id: chatId,
+        role: "user",
+        content: text || (hasImage ? "[image]" : "[voice message]"),
+      });
+      await supabase
+        .from("chats")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", chatId)
+        .eq("user_id", user.id);
+    }
+  }
+
+  // Select model: OpenAI for vision, Groq for fast text/tool use
+  const activeModel = hasImage
+    ? openai("gpt-4o-mini")
+    : groq("llama-3.3-70b-versatile");
+
+  try {
+    const mcpToolDefs = await listMCPTools();
+    const mcpToolMap = new Map<
+      string,
+      { serverUrl: string; toolName: string; description?: string }
+    >();
+    for (const t of mcpToolDefs) {
+      try {
+        const host = new URL(t.serverUrl).hostname.replace(/[^a-z0-9]+/gi, "_");
+        const key = `mcp_${host}_${t.name}`.toLowerCase();
+        mcpToolMap.set(key, {
+          serverUrl: t.serverUrl,
+          toolName: t.name,
+          description: t.description,
+        });
+      } catch {
+        /* ignore */
+      }
+    }
+
+    const commonOpts = {
+      model: activeModel,
+      messages: messagesToSend,
+      onFinish: chatId
+        ? async ({ text }: { text: string }) => {
+            await supabase.from("messages").insert({
+              chat_id: chatId,
+              role: "assistant",
+              content: text || "",
+            });
+            const title =
+              (
+                coreMessages.find((m) => m.role === "user") as
+                  | { content?: string }
+                  | undefined
+              )?.content?.slice(0, 50) ?? "New chat";
+            await supabase
+              .from("chats")
+              .update({ title, updated_at: new Date().toISOString() })
+              .eq("id", chatId)
+              .eq("user_id", user.id);
+          }
+        : undefined,
+    };
+
+    const result = hasImage
+      ? streamText({
+          ...commonOpts,
+          system:
+            "You are Askit, an AI assistant with vision capabilities. Analyze images thoroughly and respond in markdown. Be detailed and helpful.",
+          maxSteps: 1,
+        })
+      : streamText({
+          ...commonOpts,
+          system: systemPrompt,
+          maxSteps: 5,
+          tools: {
+            search_documents: tool({
+              description:
+                "Search the user's uploaded documents for relevant context. Use when the user asks about their documents or when you need factual context from their data.",
+              parameters: z.object({
+                query: z.string().describe("Search query"),
+              }),
+              execute: async ({ query }) => {
+                const chunks = await retrieveChunks(user.id, query);
+                return {
+                  results: chunks.map((c) => ({
+                    content: c.content,
+                    id: c.id,
+                  })),
+                };
+              },
+            }),
+
+            web_search: tool({
+              description:
+                "Search the web for current information. Use when the user asks for recent events, facts, news, or to find information on the internet.",
+              parameters: z.object({
+                query: z.string().describe("Search query"),
+              }),
+              execute: async ({ query }) => {
+                try {
+                  const encoded = encodeURIComponent(query);
+                  const res = await fetch(
+                    `https://api.duckduckgo.com/?q=${encoded}&format=json`,
+                    { headers: { "User-Agent": "Askit-Bot/1.0" } }
+                  );
+                  if (!res.ok)
+                    return {
+                      error: `Search failed (${res.status})`,
+                      results: [],
+                    };
+                  const data = (await res.json()) as {
+                    Abstract?: string;
+                    AbstractText?: string;
+                    RelatedTopics?: { Text?: string; FirstURL?: string }[];
+                  };
+                  const abstract = data.AbstractText || data.Abstract || "";
+                  const related = (data.RelatedTopics || [])
+                    .slice(0, 5)
+                    .map((t) => t.Text || t.FirstURL || "")
+                    .filter(Boolean);
+                  return {
+                    query,
+                    abstract: abstract.slice(0, 2000),
+                    related,
+                  };
+                } catch (err) {
+                  return {
+                    error:
+                      err instanceof Error
+                        ? err.message
+                        : "Web search failed",
+                    results: [],
+                  };
+                }
+              },
+            }),
+
+            web_fetch: tool({
+              description:
+                "Fetch and read content from a public URL. Use when the user asks you to read, summarize, or analyze a web page. Returns the text content of the page.",
+              parameters: z.object({
+                url: z.string().url().describe("The URL to fetch"),
+              }),
+              execute: async ({ url }) => {
+                try {
+                  const controller = new AbortController();
+                  const timeout = setTimeout(() => controller.abort(), 10000);
+                  const res = await fetch(url, {
+                    signal: controller.signal,
+                    headers: {
+                      "User-Agent": "Askit-Bot/1.0",
+                      Accept: "text/html,application/xhtml+xml,text/plain",
+                    },
+                  });
+                  clearTimeout(timeout);
+                  if (!res.ok) {
+                    return {
+                      error: `Failed to fetch (${res.status})`,
+                      content: null,
+                    };
+                  }
+                  const html = await res.text();
+                  const text = html
+                    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+                    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+                    .replace(/<[^>]+>/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim();
+                  return { content: text.slice(0, 8000), url };
+                } catch (err) {
+                  return {
+                    error:
+                      err instanceof Error
+                        ? err.message
+                        : "Failed to fetch URL",
+                    content: null,
+                  };
+                }
+              },
+            }),
+
+            mcp_call: tool({
+              description:
+                "Call a configured MCP server tool by key. Only works when MCP_SERVERS is set server-side.",
+              parameters: z.object({
+                toolKey: z
+                  .string()
+                  .describe("Tool key (mcp_<serverHost>_<toolName>)"),
+                args: z.record(z.unknown()).describe("Arguments for the MCP tool"),
+              }),
+              execute: async ({ toolKey, args }) => {
+                const meta = mcpToolMap.get(toolKey.toLowerCase());
+                if (!meta) {
+                  return {
+                    error: `Unknown MCP toolKey. Available: ${Array.from(mcpToolMap.keys()).slice(0, 50).join(", ")}`,
+                  };
+                }
+                const res = await callMCPTool(meta.serverUrl, meta.toolName, args);
+                const text = (res.content || [])
+                  .map((c) => c.text)
+                  .filter(Boolean)
+                  .join("\n");
+                return { toolKey, result: text || null };
+              },
+            }),
+
+            get_datetime: tool({
+              description:
+                "Get the current date and time. Use when the user asks for the current time or date, or for any time-sensitive query.",
+              parameters: z.object({}),
+              execute: async () => {
+                const now = new Date();
+                return {
+                  iso: now.toISOString(),
+                  date: now.toLocaleDateString("en-US", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  }),
+                  time: now.toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: true,
+                  }),
+                  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                  unix: Math.floor(now.getTime() / 1000),
+                };
+              },
+            }),
+          },
+        });
+
+    // Use toDataStreamResponse for compatibility with the ai/react useChat hook
+    return result.toDataStreamResponse();
+  } catch (error) {
+    console.error("Askit chat error:", error);
+    let message = "An unexpected error occurred. Please try again.";
+    if (error instanceof Error) {
+      if (
+        error.message.includes("OPENAI_API_KEY") ||
+        error.message.toLowerCase().includes("openai") && error.message.toLowerCase().includes("api key")
+      ) {
+        message = "Missing/invalid OpenAI API key (OPENAI_API_KEY).";
+      } else if (
+        error.message.includes("GROQ_API_KEY") ||
+        error.message.toLowerCase().includes("groq") && error.message.toLowerCase().includes("api key")
+      ) {
+        message = "Missing/invalid Groq API key (GROQ_API_KEY).";
+      } else if (
+        error.message.includes("rate limit") ||
+        error.message.includes("429")
+      ) {
+        message = "Rate limit reached. Please wait a moment and try again.";
+      } else if (error.message.includes("model")) {
+        message =
+          "The AI model is currently unavailable. Please try again later.";
+      } else {
+        message = error.message;
+      }
+    }
+    // IMPORTANT: the chat client expects an AI data-stream response.
+    // If we return JSON/HTML here, the client throws "Unexpected Response".
+    return createDataStreamResponse({
+      status: 500,
+      execute() {
+        throw new Error(message);
+      },
+      onError() {
+        return message;
+      },
+    });
+  }
+}
