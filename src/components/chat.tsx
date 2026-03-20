@@ -105,10 +105,11 @@ function SakuraIcon({ className = "w-8 h-8" }: { className?: string }) {
       </defs>
       <g transform="translate(32,32)">
         <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9"/>
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(72)"/>
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(144)"/>
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(216)"/>
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(288)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(60)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(120)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(180)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(240)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(300)"/>
         <circle cx="0" cy="0" r="4" fill="#fbbf24" opacity="0.8"/>
       </g>
     </svg>
@@ -155,7 +156,6 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
   >({});
   const [ingesting, setIngesting] = useState(false);
   const [chatId, setChatId] = useState<string | null>(initialChatId);
-  const [initialMessages, setInitialMessages] = useState<Message[]>([]);
   const [loaded, setLoaded] = useState(!initialChatId);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [dismissedError, setDismissedError] = useState(false);
@@ -169,47 +169,12 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const resendAfterEditRef = useRef(false);
+  const prevInitialChatIdRef = useRef(initialChatId);
   const router = useRouter();
 
   useEffect(() => {
     chatIdRef.current = chatId;
   }, [chatId]);
-
-  useEffect(() => {
-    if (initialChatId !== chatId) {
-      setChatId(initialChatId);
-      chatIdRef.current = initialChatId;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialChatId]);
-
-  useEffect(() => {
-    if (!initialChatId) {
-      setChatId(null);
-      chatIdRef.current = null;
-      setInitialMessages([]);
-      setLoaded(true);
-      return;
-    }
-    let cancelled = false;
-    fetch(`/api/chats/${initialChatId}/messages`)
-      .then((r) => r.json())
-      .then((data: { id: string; role: string; content: string }[]) => {
-        if (cancelled || !Array.isArray(data)) return;
-        setInitialMessages(
-          data.map((m) => ({
-            id: m.id,
-            role: m.role as "user" | "assistant" | "system",
-            content: m.content,
-          }))
-        );
-      })
-      .catch(() => { })
-      .finally(() => setLoaded(true));
-    return () => {
-      cancelled = true;
-    };
-  }, [initialChatId]);
 
   const {
     messages,
@@ -314,11 +279,13 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
       }
     };
     recognition.onerror = (e: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-      console.error("Speech error:", e.error);
-      // For network errors, show user-friendly message but don't crash
+      // Mute 'network' error which is common on localhost or restricted networks.
+      // We have a manual recorder fallback so this shouldn't be treated as a crash.
       if (e.error === "network") {
-        console.warn("Speech recognition network error - this requires an internet connection and may not work on localhost with some browsers. Try Chrome with a valid SSL connection.");
+        console.warn("Native speech recognition failed (network). Falling back to manual transcription.");
+        return;
       }
+      console.error("Speech error:", e.error);
       if (e.error !== "no-speech") {
         setIsRecording(false);
         isRecordingInternalRef.current = false;
@@ -427,24 +394,69 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
     return () => el.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const hasSetInitial = useRef(false);
-  const prevInitialChatId = useRef(initialChatId);
   useEffect(() => {
-    if (loaded && initialChatId && initialMessages.length > 0 && !hasSetInitial.current) {
-      setMessages(
-        initialMessages as unknown as Parameters<typeof setMessages>[0]
-      );
-      hasSetInitial.current = true;
-    }
-    if (!initialChatId) hasSetInitial.current = false;
-  }, [loaded, initialChatId, initialMessages, setMessages]);
+    // 1. If the prop hasn't changed since the last run, do nothing.
+    // This prevents accidental resets on re-renders when 'stop' or others change.
+    if (initialChatId === prevInitialChatIdRef.current) return;
 
-  useEffect(() => {
-    if (prevInitialChatId.current != null && initialChatId == null) {
-      setMessages([]);
+    // 2. If the prop changed but matches our internal state, it means we just named this chat.
+    // We update the tracker but skip the reset to keep the current stream alive.
+    if (initialChatId !== null && initialChatId === chatIdRef.current) {
+      prevInitialChatIdRef.current = initialChatId;
+      return;
     }
-    prevInitialChatId.current = initialChatId;
-  }, [initialChatId, setMessages]);
+
+    // 3. We are actually switching chats or starting a fresh one. Update tracker and reset.
+    prevInitialChatIdRef.current = initialChatId;
+
+    // 4. Immediately abort any ongoing stream and clear UI state
+    stop();
+    setMessages([]);
+    setInput("");
+    setImageDataUrl(null);
+    setAttachedFile(null);
+    setDismissedError(false);
+    setEditingMessageId(null);
+    setEditingContent("");
+
+    // 2. Clear current chat ID if switching to "New Chat"
+    if (!initialChatId) {
+      setChatId(null);
+      chatIdRef.current = null;
+      setLoaded(true);
+      return;
+    }
+
+    // 3. Mark as loading if we have a chat ID to fetch
+    setChatId(initialChatId);
+    chatIdRef.current = initialChatId;
+    setLoaded(false);
+
+    let cancelled = false;
+    fetch(`/api/chats/${initialChatId}/messages`)
+      .then((r) => r.json())
+      .then((data: { id: string; role: string; content: string }[]) => {
+        if (cancelled || !Array.isArray(data)) return;
+        setMessages(
+          data.map((m) => ({
+            id: m.id,
+            role: m.role as "user" | "assistant" | "system",
+            content: m.content,
+          }))
+        );
+      })
+      .catch((err) => {
+        console.error("Failed to load messages:", err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialChatId, stop]);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -567,8 +579,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
 
           {messages.length === 0 && !isLoading && (
             <div
-              className="flex flex-col items-center justify-center px-3 sm:px-4"
-              style={{ minHeight: "calc(100dvh - 260px)" }}
+              className="flex-1 flex flex-col items-center justify-center px-3 sm:px-4"
             >
               <div className="max-w-xl w-full text-center">
                 {/* Sakura Logo Mark */}
@@ -721,7 +732,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
               </div>
             ))}
 
-            {isLoading && messages[messages.length - 1]?.role === "user" && (
+            {isLoading && loaded && messages.length > 0 && messages[messages.length - 1]?.role === "user" && (
               <div className="flex w-full justify-start neo-fade-in">
                 <div className="flex items-center gap-2 px-3 py-3">
                   <div className="flex items-center gap-1.5">

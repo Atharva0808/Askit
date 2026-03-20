@@ -232,7 +232,7 @@ export function AppSidebar({
           >
             <svg className="w-8 h-8 shrink-0" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
               <defs><radialGradient id="sbsg" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#f9a8d4"/><stop offset="100%" stopColor="#ec4899"/></radialGradient></defs>
-              <g transform="translate(32,32)"><ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sbsg)" opacity="0.9"/><ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sbsg)" opacity="0.9" transform="rotate(72)"/><ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sbsg)" opacity="0.9" transform="rotate(144)"/><ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sbsg)" opacity="0.9" transform="rotate(216)"/><ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sbsg)" opacity="0.9" transform="rotate(288)"/><circle cx="0" cy="0" r="4" fill="#fbbf24" opacity="0.8"/></g>
+              <g transform="translate(32,32)"><ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sbsg)" opacity="0.9"/><ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sbsg)" opacity="0.9" transform="rotate(60)"/><ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sbsg)" opacity="0.9" transform="rotate(120)"/><ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sbsg)" opacity="0.9" transform="rotate(180)"/><ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sbsg)" opacity="0.9" transform="rotate(240)"/><ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sbsg)" opacity="0.9" transform="rotate(300)"/><circle cx="0" cy="0" r="4" fill="#fbbf24" opacity="0.8"/></g>
             </svg>
             <span
               className="text-lg tracking-tight"
@@ -278,11 +278,11 @@ export function AppSidebar({
         </div>
 
         {/* ── Chat History ── */}
-        <nav className="px-2 flex-1 overflow-y-auto min-h-0 flex flex-col gap-3 py-2 scrollbar-hide [&::-webkit-scrollbar]:hidden">
+        <nav className="px-2 flex-1 overflow-hidden min-h-0 flex flex-col gap-2 py-2">
           {/* Chats */}
-          <div className="flex flex-col min-h-0">
+          <div className="flex flex-col min-h-0 flex-[6]">
             <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/20 mb-1.5">Recent</p>
-            <div className="space-y-0.5 overflow-y-auto flex-1 scrollbar-hide [&::-webkit-scrollbar]:hidden">
+            <div className="space-y-0.5 overflow-y-auto flex-1 pr-1">
               {filteredChats.length === 0 && !searchQuery && (
                 <p className="text-[11px] text-white/15 px-3 py-3 text-center">No chats yet</p>
               )}
@@ -347,9 +347,9 @@ export function AppSidebar({
 
           {/* Documents (Knowledge) */}
           {documents.length > 0 && (
-            <div className="flex flex-col min-h-0">
+            <div className="flex flex-col min-h-0 flex-[4] border-t border-white/[0.04] pt-3">
               <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/20 mb-1.5">Knowledge</p>
-              <div className="space-y-0.5 overflow-y-auto flex-1 max-h-40 scrollbar-hide [&::-webkit-scrollbar]:hidden">
+              <div className="space-y-0.5 overflow-y-auto flex-1 pr-1">
                 {documents.map((doc) => {
                   const isRenaming = renamingDocId === doc.id;
                   return (

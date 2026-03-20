@@ -60,7 +60,8 @@ GUIDELINES:
 - You can handle voice input: the user may speak to you; respond naturally.
 - Format responses in markdown for readability (use headings, lists, code blocks, bold, etc).
 - Be concise and accurate. Cite document chunks when you use them.
-- When presenting code, always use fenced code blocks with the language specified.`;
+- When presenting code, always use fenced code blocks with the language specified.
+- IMPORTANT: When you need to use a tool (web_search, search_documents, etc.), use the tool calling functionality provided by the system. NEVER write out a tool call like "<function(...)" or similar as text in your response. Just call the tool.`;
 
   // Build core messages, stripping inline base64 image markdown so it doesn't
   // confuse the text model. We send the image via the proper multimodal API.

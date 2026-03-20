@@ -9,12 +9,6 @@ export default async function DocumentsPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
-  const { data: documents } = await supabase
-    .from("documents")
-    .select("id, name, created_at")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
-
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8 pt-20 sm:pt-24">
       <div className="mb-6 sm:mb-8">
@@ -28,7 +22,7 @@ export default async function DocumentsPage() {
           Upload files or paste URLs. Documents are chunked for AI retrieval.
         </p>
       </div>
-      <DocumentsClient initialDocuments={documents ?? []} />
+      <DocumentsClient />
     </div>
   );
 }

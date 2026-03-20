@@ -16,10 +16,11 @@ function SakuraIcon({ className = "w-6 h-6" }: { className?: string }) {
       </defs>
       <g transform="translate(32,32)">
         <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg_login)" opacity="0.9" />
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg_login)" opacity="0.9" transform="rotate(72)" />
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg_login)" opacity="0.9" transform="rotate(144)" />
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg_login)" opacity="0.9" transform="rotate(216)" />
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg_login)" opacity="0.9" transform="rotate(288)" />
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg_login)" opacity="0.9" transform="rotate(60)" />
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg_login)" opacity="0.9" transform="rotate(120)" />
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg_login)" opacity="0.9" transform="rotate(180)" />
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg_login)" opacity="0.9" transform="rotate(240)" />
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg_login)" opacity="0.9" transform="rotate(300)" />
         <circle cx="0" cy="0" r="4" fill="#fbbf24" opacity="0.8" />
       </g>
     </svg>

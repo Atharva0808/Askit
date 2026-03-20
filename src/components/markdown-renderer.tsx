@@ -25,6 +25,11 @@ function CopyCodeButton({ text }: { text: string }) {
 }
 
 export function MarkdownRenderer({ content }: { content: string }) {
+  // Defensive: Strip leaked function tags from model outputs
+  const cleanedContent = content.replace(/<function[\s\S]*?<\/function>/gi, "").trim();
+  
+  if (!cleanedContent) return null;
+
   return (
     <div className="md-content">
       <ReactMarkdown
@@ -79,7 +84,7 @@ export function MarkdownRenderer({ content }: { content: string }) {
           },
         }}
       >
-        {content}
+        {cleanedContent}
       </ReactMarkdown>
     </div>
   );
