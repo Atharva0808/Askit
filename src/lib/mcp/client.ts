@@ -21,11 +21,20 @@ export type MCPToolDefinition = {
   inputSchema?: Record<string, unknown>;
 };
 
+let cachedTools: Map<string, MCPToolDefinition> | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 /**
  * Fetch available tools from configured MCP servers.
  * Returns a map of toolName -> { name, description, inputSchema }.
  */
 export async function getMCPTools(): Promise<Map<string, MCPToolDefinition>> {
+  const now = Date.now();
+  if (cachedTools && (now - cacheTimestamp < CACHE_TTL)) {
+    return cachedTools;
+  }
+
   const tools = new Map<string, MCPToolDefinition>();
 
   for (const serverUrl of MCP_SERVER_URLS) {
@@ -50,7 +59,9 @@ export async function getMCPTools(): Promise<Map<string, MCPToolDefinition>> {
       console.warn(`[MCP] Failed to connect to ${serverUrl}:`, err);
     }
   }
-
+  
+  cachedTools = tools;
+  cacheTimestamp = Date.now();
   return tools;
 }
 
