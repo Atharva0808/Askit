@@ -394,6 +394,27 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
     return () => el.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // --- Reset & Transition Logic ---
+  const resetChat = useCallback(() => {
+    stop();
+    setMessages([]);
+    setInput("");
+    setImageDataUrl(null);
+    setAttachedFile(null);
+    setDismissedError(false);
+    setEditingMessageId(null);
+    setEditingContent("");
+    setChatId(null);
+    chatIdRef.current = null;
+    setLoaded(true);
+  }, [stop, setMessages, setInput]);
+
+  useEffect(() => {
+    const handleResetEvent = () => resetChat();
+    window.addEventListener("reset-chat", handleResetEvent);
+    return () => window.removeEventListener("reset-chat", handleResetEvent);
+  }, [resetChat]);
+
   useEffect(() => {
     // 1. If the prop hasn't changed since the last run, do nothing.
     // This prevents accidental resets on re-renders when 'stop' or others change.
@@ -409,25 +430,12 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
     // 3. We are actually switching chats or starting a fresh one. Update tracker and reset.
     prevInitialChatIdRef.current = initialChatId;
 
-    // 4. Immediately abort any ongoing stream and clear UI state
-    stop();
-    setMessages([]);
-    setInput("");
-    setImageDataUrl(null);
-    setAttachedFile(null);
-    setDismissedError(false);
-    setEditingMessageId(null);
-    setEditingContent("");
-
-    // 2. Clear current chat ID if switching to "New Chat"
     if (!initialChatId) {
-      setChatId(null);
-      chatIdRef.current = null;
-      setLoaded(true);
+      resetChat();
       return;
     }
 
-    // 3. Mark as loading if we have a chat ID to fetch
+    // Mark as loading if we have a chat ID to fetch
     setChatId(initialChatId);
     chatIdRef.current = initialChatId;
     setLoaded(false);
@@ -456,7 +464,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialChatId, stop]);
+  }, [initialChatId, resetChat]);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -577,7 +585,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
       <div ref={scrollAreaRef} className="flex-1 overflow-y-auto w-full p-3 sm:p-6 pt-20 sm:pt-24 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div className="max-w-3xl mx-auto w-full flex flex-col min-h-full pb-[140px]">
 
-          {messages.length === 0 && !isLoading && (
+          {messages.length === 0 && !chatId && (
             <div
               className="flex-1 flex flex-col items-center justify-center px-3 sm:px-4"
             >
@@ -732,7 +740,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
               </div>
             ))}
 
-            {isLoading && loaded && messages.length > 0 && messages[messages.length - 1]?.role === "user" && (
+            {isLoading && loaded && (initialChatId === chatId || (initialChatId === null && messages.length === 1)) && messages.length > 0 && messages[messages.length - 1]?.role === "user" && (
               <div className="flex w-full justify-start neo-fade-in">
                 <div className="flex items-center gap-2 px-3 py-3">
                   <div className="flex items-center gap-1.5">

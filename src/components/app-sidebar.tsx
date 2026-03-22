@@ -229,6 +229,7 @@ export function AppSidebar({
           <Link
             href="/app"
             className="flex items-center gap-2.5 group"
+            onClick={() => window.dispatchEvent(new CustomEvent("reset-chat"))}
           >
             <svg className="w-8 h-8 shrink-0" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
               <defs><radialGradient id="sbsg" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#f9a8d4"/><stop offset="100%" stopColor="#ec4899"/></radialGradient></defs>
@@ -255,6 +256,7 @@ export function AppSidebar({
           <Link
             href="/app"
             className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-white/[0.06] to-white/[0.03] hover:from-white/[0.10] hover:to-white/[0.06] border border-white/[0.06] hover:border-white/[0.10] text-neo-white text-sm font-medium transition-colors duration-75 w-full group touch-manipulation"
+            onClick={() => window.dispatchEvent(new CustomEvent("reset-chat"))}
           >
             <IconPlus />
             <span>New chat</span>
