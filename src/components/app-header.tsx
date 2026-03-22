@@ -50,10 +50,11 @@ export function AppHeader({ user }: { user: User }) {
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-medium transition-colors duration-75 touch-manipulation ${
+              prefetch={true}
+              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-medium transition-all duration-75 active:scale-95 touch-manipulation ${
                 pathname === href
                   ? "bg-white/[0.08] text-white shadow-sm"
-                  : "text-white/40 hover:text-white/80 hover:bg-white/[0.04]"
+                  : "text-white/40 hover:text-white/80 hover:bg-white/[0.04] active:bg-white/[0.08]"
               }`}
               title={label}
             >

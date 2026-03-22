@@ -137,11 +137,11 @@ export default function PluginsPage() {
   const connectedCount = connected.size;
 
   return (
-    <div className="relative z-10 max-w-4xl mx-auto p-4 sm:p-6 md:p-8 pt-28 sm:pt-28">
+    <div className="relative z-10 max-w-4xl mx-auto px-4 py-6 sm:py-8 pt-20 sm:pt-24">
       <div className="mb-6 sm:mb-8">
         <div className="flex items-center gap-3 mb-1">
           <h1
-            className="text-2xl mb-1 tracking-tight"
+            className="text-xl sm:text-2xl tracking-tight"
             style={{ fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontWeight: 700, color: "var(--neo-white)" }}
           >
             Plugins

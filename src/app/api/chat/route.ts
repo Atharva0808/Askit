@@ -271,37 +271,70 @@ GUIDELINES:
               execute: async ({ query }) => {
                 try {
                   const encoded = encodeURIComponent(query);
-                  const res = await fetch(
-                    `https://api.duckduckgo.com/?q=${encoded}&format=json`,
-                    { headers: { "User-Agent": "Askit-Bot/1.0" } }
+                  // 1. Try HTML search for detailed results (better for news/current events)
+                  const htmlRes = await fetch(
+                    `https://html.duckduckgo.com/html/?q=${encoded}`,
+                    {
+                      headers: {
+                        "User-Agent":
+                          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+                        "Accept-Language": "en-US,en;q=0.9",
+                      },
+                      cache: "no-store",
+                    }
                   );
-                  if (!res.ok)
-                    return {
-                      error: `Search failed (${res.status})`,
-                      results: [],
-                    };
-                  const data = (await res.json()) as {
-                    Abstract?: string;
-                    AbstractText?: string;
-                    RelatedTopics?: { Text?: string; FirstURL?: string }[];
-                  };
-                  const abstract = data.AbstractText || data.Abstract || "";
-                  const related = (data.RelatedTopics || [])
-                    .slice(0, 5)
-                    .map((t) => t.Text || t.FirstURL || "")
-                    .filter(Boolean);
+
+                  let resultsText = "";
+
+                  if (htmlRes.ok) {
+                    const html = await htmlRes.text();
+                    const results: string[] = [];
+                    // Extract result items (Title, Link, Snippet)
+                    const regex = /class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]+?)<\/a>[\s\S]*?class="result__snippet"[^>]*>([\s\S]+?)<\/a>/g;
+                    let m;
+                    while ((m = regex.exec(html)) !== null && results.length < 8) {
+                      const link = m[1];
+                      // Strip tags from title and snippet
+                      const title = m[2].replace(/<[^>]+>/g, "").trim();
+                      const snippet = m[3].replace(/<[^>]+>/g, "").trim();
+                      results.push(`Title: ${title}\nSource: ${link}\nSummary: ${snippet}`);
+                    }
+                    if (results.length > 0) {
+                      resultsText = results.join("\n\n---\n\n");
+                    }
+                  }
+
+                  // 2. If HTML failed or returned nothing, fallback to simple JSON API
+                  if (!resultsText) {
+                    const res = await fetch(
+                      `https://api.duckduckgo.com/?q=${encoded}&format=json`,
+                      { headers: { "User-Agent": "Askit-Bot/1.0" } }
+                    );
+                    if (res.ok) {
+                      const data = (await res.json()) as {
+                        AbstractText?: string;
+                        Abstract?: string;
+                        RelatedTopics?: { Text?: string; FirstURL?: string }[];
+                      };
+                      const abstract = data.AbstractText || data.Abstract || "";
+                      const related = (data.RelatedTopics || [])
+                        .slice(0, 5)
+                        .map((t) => t.Text || t.FirstURL || "")
+                        .filter(Boolean);
+                      resultsText = `Direct Answer: ${abstract}\nRelated Information: ${related.join(", ")}`;
+                    }
+                  }
+
                   return {
                     query,
-                    abstract: abstract.slice(0, 2000),
-                    related,
+                    results: resultsText || "No detailed results found. Try a different query.",
+                    source: resultsText ? "Latest Search Data" : "No results"
                   };
                 } catch (err) {
                   return {
-                    error:
-                      err instanceof Error
-                        ? err.message
-                        : "Web search failed",
-                    results: [],
+                    error: err instanceof Error ? err.message : "Web search failed",
+                    results: "",
                   };
                 }
               },

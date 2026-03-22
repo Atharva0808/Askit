@@ -99,18 +99,18 @@ function SakuraIcon({ className = "w-8 h-8" }: { className?: string }) {
     <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <radialGradient id="csg" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#f9a8d4"/>
-          <stop offset="100%" stopColor="#ec4899"/>
+          <stop offset="0%" stopColor="#f9a8d4" />
+          <stop offset="100%" stopColor="#ec4899" />
         </radialGradient>
       </defs>
       <g transform="translate(32,32)">
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9"/>
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(60)"/>
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(120)"/>
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(180)"/>
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(240)"/>
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(300)"/>
-        <circle cx="0" cy="0" r="4" fill="#fbbf24" opacity="0.8"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" />
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(60)" />
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(120)" />
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(180)" />
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(240)" />
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(300)" />
+        <circle cx="0" cy="0" r="4" fill="#fbbf24" opacity="0.8" />
       </g>
     </svg>
   );
@@ -176,6 +176,9 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
     chatIdRef.current = chatId;
   }, [chatId]);
 
+  // Use a stable ID for the hook that doesn't change mid-stream
+  const [hookId, setHookId] = useState(initialChatId ?? "new-chat");
+
   const {
     messages,
     input,
@@ -189,9 +192,13 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
     setInput,
   } = useChat({
     api: "/api/chat",
-    id: chatId ?? undefined,
-    body: { chatId: chatId ?? undefined, imageUrl: imageDataUrl ?? undefined },
-    onFinish: () => { setImageDataUrl(null); setAttachedFile(null); },
+    id: hookId,
+    body: { chatId: chatIdRef.current ?? undefined, imageUrl: imageDataUrl ?? undefined },
+    onFinish: () => {
+      setImageDataUrl(null);
+      setAttachedFile(null);
+      router.refresh();
+    },
     onError: () => setDismissedError(false),
     fetch: async (input, init) => {
       const body = init?.body ? JSON.parse(init.body as string) : {};
@@ -207,7 +214,8 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
         if (newId) {
           body.chatId = newId;
           chatIdRef.current = newId;
-          setChatId(newId);
+          // Note: We don't setChatId(newId) here because it causes useChat id to flip
+          // and clear messages. We rely on router.push to update initialChatId.
           router.push(`/app?chatId=${newId}`, { scroll: false });
           router.refresh();
         }
@@ -405,6 +413,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
     setEditingMessageId(null);
     setEditingContent("");
     setChatId(null);
+    setHookId("new-chat");
     chatIdRef.current = null;
     setLoaded(true);
   }, [stop, setMessages, setInput]);
@@ -437,6 +446,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
 
     // Mark as loading if we have a chat ID to fetch
     setChatId(initialChatId);
+    setHookId(initialChatId);
     chatIdRef.current = initialChatId;
     setLoaded(false);
 
@@ -504,11 +514,11 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
         let w = img.width;
         let h = img.height;
         if (w > h && w > MAX_DIM) {
-           h = Math.round((h * MAX_DIM) / w);
-           w = MAX_DIM;
+          h = Math.round((h * MAX_DIM) / w);
+          w = MAX_DIM;
         } else if (h > MAX_DIM) {
-           w = Math.round((w * MAX_DIM) / h);
-           h = MAX_DIM;
+          w = Math.round((w * MAX_DIM) / h);
+          h = MAX_DIM;
         }
         canvas.width = w;
         canvas.height = h;
@@ -585,7 +595,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
       <div ref={scrollAreaRef} className="flex-1 overflow-y-auto w-full p-3 sm:p-6 pt-20 sm:pt-24 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div className="max-w-3xl mx-auto w-full flex flex-col min-h-full pb-[140px]">
 
-          {messages.length === 0 && !chatId && (
+          {messages.length === 0 && !isLoading && !initialChatId && (
             <div
               className="flex-1 flex flex-col items-center justify-center px-3 sm:px-4"
             >
@@ -601,7 +611,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
                   How can I help you today?
                 </h1>
                 <p className="text-neo-white-muted text-xs sm:text-sm mb-8 sm:mb-10 max-w-lg mx-auto leading-relaxed px-2">
-                  Ultra-fast AI with retrieval augmented generation,
+                  Your personal assistant with retrieval augmented generation,
                   multimodal vision, voice input and powerful tools.
                 </p>
                 <div className="grid grid-cols-2 gap-2 sm:gap-2.5 w-full max-w-lg mx-auto">
@@ -740,7 +750,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
               </div>
             ))}
 
-            {isLoading && loaded && (initialChatId === chatId || (initialChatId === null && messages.length === 1)) && messages.length > 0 && messages[messages.length - 1]?.role === "user" && (
+            {isLoading && messages.length > 0 && messages[messages.length - 1]?.role === "user" && (
               <div className="flex w-full justify-start neo-fade-in">
                 <div className="flex items-center gap-2 px-3 py-3">
                   <div className="flex items-center gap-1.5">

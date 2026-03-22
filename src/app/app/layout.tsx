@@ -9,15 +9,15 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/");
-
-  const [chatsRes, docsRes] = await Promise.all([
-    supabase.from("chats").select("id, title, updated_at").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(30),
-    supabase.from("documents").select("id, name, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(30),
+  // One-trip parallelization of auth and data fetch (relying on Supabase RLS for filtering)
+  const [userRes, chatsRes, docsRes] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.from("chats").select("id, title, updated_at").order("updated_at", { ascending: false }).limit(30),
+    supabase.from("documents").select("id, name, created_at").order("created_at", { ascending: false }).limit(30),
   ]);
+
+  const { data: { user } } = userRes;
+  if (!user) redirect("/");
 
   const chats = chatsRes.data ?? [];
   const documents = docsRes.data ?? [];

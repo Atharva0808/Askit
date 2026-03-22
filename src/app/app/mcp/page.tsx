@@ -44,16 +44,18 @@ export default function MCPPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6 sm:p-8 pt-24 sm:pt-24">
-      <h1
-        className="text-2xl mb-1 tracking-tight"
-        style={{ fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontWeight: 700, color: "var(--neo-white)" }}
-      >
-        MCP Servers
-      </h1>
-      <p className="text-neo-white-muted/60 text-sm mb-6">
-        Connect Model Context Protocol servers to extend the AI with custom tools.
-      </p>
+    <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8 pt-20 sm:pt-24">
+      <div className="mb-6 sm:mb-8">
+        <h1
+          className="text-xl sm:text-2xl tracking-tight"
+          style={{ fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontWeight: 700, color: "var(--neo-white)" }}
+        >
+          MCP Servers
+        </h1>
+        <p className="text-white/40 text-xs sm:text-sm">
+          Connect Model Context Protocol servers to extend the AI with custom tools.
+        </p>
+      </div>
 
       {/* Add server form */}
       <form onSubmit={handleAdd} className="flex gap-2 mb-6">

@@ -102,12 +102,18 @@ export function AppSidebar({
   const [renameValue, setRenameValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [isOpen, setIsOpen] = useState(true);
+  const [deletedChatIds, setDeletedChatIds] = useState<Set<string>>(new Set());
+  const [deletedDocIds, setDeletedDocIds] = useState<Set<string>>(new Set());
 
-  const filteredChats = chats.filter((chat) =>
-    (chat.title || "New chat")
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase())
-  );
+  const filteredChats = chats
+    .filter((chat) => !deletedChatIds.has(chat.id))
+    .filter((chat) =>
+      (chat.title || "New chat")
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase())
+    );
+
+  const filteredDocs = documents.filter((doc) => !deletedDocIds.has(doc.id));
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -117,25 +123,55 @@ export function AppSidebar({
   async function deleteChat(e: React.MouseEvent, id: string) {
     e.preventDefault();
     e.stopPropagation();
+    // Optimistic update
+    setDeletedChatIds((prev) => new Set(prev).add(id));
+    if (currentChatId === id) router.push("/app");
+
     try {
       const res = await fetch(`/api/chats/${id}`, { method: "DELETE" });
       if (res.ok) {
-        if (currentChatId === id) router.push("/app");
         router.refresh();
+      } else {
+        // Revert on error
+        setDeletedChatIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
       }
     } catch {
-      /* noop */
+      setDeletedChatIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   }
 
   async function deleteDocument(e: React.MouseEvent, id: string) {
     e.preventDefault();
     e.stopPropagation();
+    // Optimistic update
+    setDeletedDocIds((prev) => new Set(prev).add(id));
+
     try {
       const res = await fetch(`/api/documents/${id}`, { method: "DELETE" });
-      if (res.ok) router.refresh();
+      if (res.ok) {
+        router.refresh();
+      } else {
+        // Revert on error
+        setDeletedDocIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }
     } catch {
-      /* noop */
+      setDeletedDocIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   }
 
@@ -352,7 +388,7 @@ export function AppSidebar({
             <div className="flex flex-col min-h-0 flex-[4] border-t border-white/[0.04] pt-3">
               <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/20 mb-1.5">Knowledge</p>
               <div className="space-y-0.5 overflow-y-auto flex-1 pr-1">
-                {documents.map((doc) => {
+                {filteredDocs.map((doc) => {
                   const isRenaming = renamingDocId === doc.id;
                   return (
                     <div key={doc.id} className="flex items-center group gap-2 px-3 py-1.5 rounded-lg text-[12px] text-white/35 hover:text-white/60 hover:bg-white/[0.02] transition-all duration-150 cursor-default">
