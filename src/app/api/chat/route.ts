@@ -35,6 +35,8 @@ export async function POST(req: Request) {
 
   const { messages: rawMessages, chatId, data } = body;
   const imageUrl = (data?.imageUrl as string) || body.imageUrl;
+  const userMcpServers = (data?.mcpServers as string[]) || [];
+  const userPlugins = (data?.plugins as Array<{ id: string, domain: string, name: string, key?: string }>) || [];
 
   if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
     return new Response(JSON.stringify({ error: "No messages provided" }), {
@@ -43,19 +45,28 @@ export async function POST(req: Request) {
     });
   }
 
+  const pluginContext = userPlugins.length > 0
+    ? `\n\nCONNECTED PLUGINS & API KEYS:\nYou have active connections for: ${userPlugins.map(p => p.name).join(", ")}.
+       The system will automatically attempt to inject your browser-stored API keys into MCP tool calls. 
+       If a tool asks for a "token" or "apiKey", you can assume the system has provided it from these plugins.`
+    : "";
+
   const systemPrompt = `You are Askit, a helpful AI assistant with access to the user's documents and powerful tools.
+${pluginContext}
 
 CAPABILITIES:
 - search_documents: Search the user's uploaded documents for relevant context (RAG)
 - web_fetch: Fetch and read content from any public URL/website
 - web_search: Search the web for current information. Use for recent events, facts, or when the user asks for "search" or "find" or "latest".
 - get_datetime: Get the current date and time
+- mcp_call: Call tools from custom MCP servers (GitHub, Slack, SQL, etc.)
 
 GUIDELINES:
 - Use search_documents when the user asks about their uploaded documents or when you need to ground your answer in their data.
 - Use web_fetch when the user asks you to read, summarize, or analyze a web page.
 - Use web_search when the user asks for current information, recent news, or to search the web for a topic.
 - Use get_datetime when the user needs the current date/time or for any time-sensitive query.
+- Use mcp_call whenever the user asks for actions involving external services like GitHub, Slack, or databases, provided an MCP tool is available.
 - You can understand images: the user may send an image; describe or answer based on it when relevant.
 - You can handle voice input: the user may speak to you; respond naturally.
 - Format responses in markdown for readability (use headings, lists, code blocks, bold, etc).
@@ -189,7 +200,7 @@ GUIDELINES:
     : groq("llama-3.3-70b-versatile");
 
   try {
-    const mcpToolDefs = await listMCPTools();
+    const mcpToolDefs = await listMCPTools(userMcpServers);
     const mcpToolMap = new Map<
       string,
       { serverUrl: string; toolName: string; description?: string }
@@ -254,8 +265,8 @@ GUIDELINES:
               execute: async ({ query }) => {
                 const chunks = await retrieveChunks(user.id, query);
                 return {
-                  results: chunks.map((c) => ({
-                    content: c.content,
+                  results: chunks.slice(0, 10).map((c) => ({
+                    content: c.content.slice(0, 4000), // Truncate per chunk
                     id: c.id,
                   })),
                 };
@@ -397,15 +408,40 @@ GUIDELINES:
                 const meta = mcpToolMap.get(toolKey.toLowerCase());
                 if (!meta) {
                   return {
-                    error: `Unknown MCP toolKey. Available: ${Array.from(mcpToolMap.keys()).slice(0, 50).join(", ")}`,
+                    error: `Unknown MCP toolKey. Available keys: ${Array.from(mcpToolMap.keys()).join(", ")}`,
                   };
                 }
+
+                // Automorphic Credential Injection:
+                // If we have a plugin key matching this tool's origin (e.g. "github"), 
+                // inject it into common auth parameters if the AI didn't provide one.
+                const toolLower = toolKey.toLowerCase();
+                const matchedPlugin = userPlugins.find(p => 
+                  toolLower.includes(p.id.toLowerCase()) || 
+                  meta.serverUrl.toLowerCase().includes(p.id.toLowerCase())
+                );
+                
+                if (matchedPlugin?.key) {
+                   const finalArgs = { ...args } as Record<string, any>;
+                   // Inject into common parameter names used by MCP tools
+                   const authFields = ["token", "apiKey", "api_key", "password", "access_token"];
+                   authFields.forEach(field => {
+                      if (!finalArgs[field]) finalArgs[field] = matchedPlugin.key;
+                   });
+                   const res = await callMCPTool(meta.serverUrl, meta.toolName, finalArgs);
+                   const text = (res.content || [])
+                     .map((c) => c.text)
+                     .filter(Boolean)
+                     .join("\n");
+                   return { toolKey, result: text.slice(0, 10000) }; // Truncate MCP output
+                }
+
                 const res = await callMCPTool(meta.serverUrl, meta.toolName, args);
                 const text = (res.content || [])
                   .map((c) => c.text)
                   .filter(Boolean)
                   .join("\n");
-                return { toolKey, result: text || null };
+                return { toolKey, result: text.slice(0, 10000) || null };
               },
             }),
 
@@ -440,7 +476,12 @@ GUIDELINES:
     // Use toDataStreamResponse for compatibility with the ai/react useChat hook
     return result.toDataStreamResponse();
   } catch (error) {
-    console.error("Askit chat error:", error);
+    console.error("Askit chat error details:", {
+       message: error instanceof Error ? error.message : String(error),
+       stack: error instanceof Error ? error.stack : undefined,
+       chatId
+    });
+    
     let message = "An unexpected error occurred. Please try again.";
     if (error instanceof Error) {
       if (
@@ -458,18 +499,20 @@ GUIDELINES:
         error.message.includes("429")
       ) {
         message = "Rate limit reached. Please wait a moment and try again.";
+      } else if (error.message.includes("ECONNREFUSED") || error.message.includes("fetch failed")) {
+        message = "Failed to connect to an external server or MCP host. Please check your connections.";
       } else if (error.message.includes("model")) {
-        message =
-          "The AI model is currently unavailable. Please try again later.";
+        message = "The AI model is currently unavailable. Please try again later.";
       } else {
         message = error.message;
       }
     }
-    // IMPORTANT: the chat client expects an AI data-stream response.
-    // If we return JSON/HTML here, the client throws "Unexpected Response".
+
+    // Consistently return 500 with a detailed inner error that useChat can parse
     return createDataStreamResponse({
       status: 500,
-      execute() {
+      execute(writer) {
+        // Encode the error properly for the AI SDK client
         throw new Error(message);
       },
       onError() {

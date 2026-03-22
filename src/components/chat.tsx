@@ -193,46 +193,43 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
   } = useChat({
     api: "/api/chat",
     id: hookId,
-    body: { chatId: chatIdRef.current ?? undefined, imageUrl: imageDataUrl ?? undefined },
     onFinish: () => {
       setImageDataUrl(null);
       setAttachedFile(null);
       router.refresh();
     },
     onError: () => setDismissedError(false),
-    fetch: async (input, init) => {
-      const body = init?.body ? JSON.parse(init.body as string) : {};
-      body.chatId = chatIdRef.current ?? body.chatId;
-      if (!body.chatId) {
-        const createRes = await fetch("/api/chats", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: "{}",
-        });
-        const createData = await createRes.json().catch(() => ({}));
-        const newId = createData?.id;
-        if (newId) {
-          body.chatId = newId;
-          chatIdRef.current = newId;
-          // Note: We don't setChatId(newId) here because it causes useChat id to flip
-          // and clear messages. We rely on router.push to update initialChatId.
-          router.push(`/app?chatId=${newId}`, { scroll: false });
-          router.refresh();
-        }
-      }
-      const res = await fetch(input, { ...init, body: JSON.stringify(body) });
-      if (!res.ok) {
-        const contentType = res.headers.get("content-type") ?? "";
-        if (contentType.includes("application/json")) {
-          const data = await res.json().catch(() => ({}));
-          const msg = typeof data?.error === "string" ? data.error : res.statusText;
-          throw new Error(msg);
-        }
-        throw new Error(`Request failed (${res.status})`);
-      }
-      return res;
-    },
   });
+
+  const getHarvestedData = () => {
+    if (typeof window === "undefined") return { mcpServers: [], plugins: [] };
+    try {
+      const mcpServers = JSON.parse(localStorage.getItem("askit_mcp_servers") || "[]");
+      const builtInIds = [
+        "slack", "figma", "stripe", "github", "notion", "linear", "jira", "google-drive",
+        "dropbox", "trello", "asana", "hubspot", "salesforce", "zendesk", "intercom",
+        "airtable", "monday", "confluence", "discord", "twitter", "gmail", "outlook",
+        "calendly", "zoom", "spotify", "youtube", "twitch", "shopify", "firebase", "vercel",
+        "aws", "gcp", "openai", "anthropic", "huggingface"
+      ];
+      const plugins: any[] = [];
+      
+      builtInIds.forEach(id => {
+        const key = localStorage.getItem(`askit_plugin_${id}`);
+        if (key) plugins.push({ id, name: id.charAt(0).toUpperCase() + id.slice(1), key });
+      });
+      const customList = JSON.parse(localStorage.getItem("askit_custom_plugins") || "[]");
+      if (Array.isArray(customList)) {
+        customList.forEach((c: any) => {
+          const key = localStorage.getItem(`askit_plugin_${c.id}`);
+          if (key) plugins.push({ ...c, key });
+        });
+      }
+      return { mcpServers, plugins };
+    } catch {
+      return { mcpServers: [], plugins: [] };
+    }
+  };
 
   const uiMessages = messages as UIMessage[];
 
@@ -548,13 +545,34 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
     append({ role: "user", content: text });
   }
 
-  function forceSubmit(overrideContent?: string) {
+   async function forceSubmit(overrideContent?: string) {
     if (isLoading) return;
     const finalContent = overrideContent || input.trim() || voiceTranscriptRef.current.trim() || (imageDataUrl ? "Analyze this image." : "");
     if (!finalContent && !imageDataUrl && !attachedFile) return;
 
     const currentImg = imageDataUrl;
     const currentFile = attachedFile;
+    const hData = getHarvestedData();
+
+    // Ensure we have a chatId before the first message
+    if (!chatIdRef.current) {
+      try {
+        const createRes = await fetch("/api/chats", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        });
+        const createData = await createRes.json().catch(() => ({}));
+        const newId = createData?.id;
+        if (newId) {
+          chatIdRef.current = newId;
+          router.push(`/app?chatId=${newId}`, { scroll: false });
+          // No refresh here to avoid state reset
+        }
+      } catch (err) {
+        console.error("Failed to create chat session:", err);
+      }
+    }
 
     const messageId =
       (globalThis.crypto && "randomUUID" in globalThis.crypto
@@ -572,14 +590,21 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
     }
 
     append(
-      { id: messageId, role: "user", content: finalContent || (currentImg ? "Analyze this image." : "") },
-      { data: currentImg ? { imageUrl: currentImg } : undefined }
+      { id: messageId, role: "user", content: finalContent },
+      { 
+        body: { 
+          chatId: chatIdRef.current, 
+          imageUrl: currentImg ?? undefined,
+          ...hData 
+        } 
+      }
     );
 
     setInput("");
     voiceTranscriptRef.current = "";
     setImageDataUrl(null);
     setAttachedFile(null);
+    setDismissedError(false);
   }
 
   const lastAssistantIdx = uiMessages

@@ -22,25 +22,33 @@ export type MCPToolDefinition = {
 };
 
 let cachedTools: Map<string, MCPToolDefinition> | null = null;
+let lastServerList: string = "";
 let cacheTimestamp = 0;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 1 * 60 * 1000; // 1 minute when dynamic
 
 /**
  * Fetch available tools from configured MCP servers.
- * Returns a map of toolName -> { name, description, inputSchema }.
+ * Supports passing dynamic user-defined servers.
  */
-export async function getMCPTools(): Promise<Map<string, MCPToolDefinition>> {
+export async function getMCPTools(userServers: string[] = []): Promise<Map<string, MCPToolDefinition>> {
+  const allServers = Array.from(new Set([...MCP_SERVER_URLS, ...userServers]));
+  const serverKey = allServers.sort().join(",");
   const now = Date.now();
-  if (cachedTools && (now - cacheTimestamp < CACHE_TTL)) {
+  
+  if (cachedTools && serverKey === lastServerList && (now - cacheTimestamp < CACHE_TTL)) {
     return cachedTools;
   }
 
   const tools = new Map<string, MCPToolDefinition>();
 
-  for (const serverUrl of MCP_SERVER_URLS) {
+  for (const serverUrl of allServers) {
     try {
       const transport = new StreamableHTTPClientTransport(new URL(serverUrl));
-      await transport.start();
+      // Add timeout to transport start
+      await Promise.race([
+         transport.start(),
+         new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout connecting to MCP")), 4000))
+      ]);
       const client = new Client({ name: "askit", version: "1.0.0" });
       await client.connect(transport);
 
@@ -61,12 +69,13 @@ export async function getMCPTools(): Promise<Map<string, MCPToolDefinition>> {
   }
   
   cachedTools = tools;
+  lastServerList = serverKey;
   cacheTimestamp = Date.now();
   return tools;
 }
 
-export async function listMCPTools(): Promise<MCPToolDefinition[]> {
-  return Array.from((await getMCPTools()).values());
+export async function listMCPTools(userServers: string[] = []): Promise<MCPToolDefinition[]> {
+  return Array.from((await getMCPTools(userServers)).values());
 }
 
 /**
@@ -77,13 +86,18 @@ export async function callMCPTool(
   toolName: string,
   args: Record<string, unknown>
 ): Promise<{ content: Array<{ type: string; text?: string }> }> {
-  const transport = new StreamableHTTPClientTransport(new URL(serverUrl));
-  await transport.start();
-  const client = new Client({ name: "askit", version: "1.0.0" });
-  await client.connect(transport);
+  try {
+    const transport = new StreamableHTTPClientTransport(new URL(serverUrl));
+    await transport.start();
+    const client = new Client({ name: "askit", version: "1.0.0" });
+    await client.connect(transport);
 
-  const result = await client.callTool({ name: toolName, arguments: args });
-  await client.close();
+    const result = await client.callTool({ name: toolName, arguments: args });
+    await client.close();
 
-  return result as { content: Array<{ type: string; text?: string }> };
+    return result as { content: Array<{ type: string; text?: string }> };
+  } catch (err) {
+    console.error(`[MCP] Failed to call ${toolName} on ${serverUrl}:`, err);
+    throw err;
+  }
 }
