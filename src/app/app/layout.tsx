@@ -23,9 +23,9 @@ export default async function AppLayout({
   const documents = docsRes.data ?? [];
 
   return (
-    <div className="h-screen w-screen bg-neo-black text-neo-white flex overflow-hidden" suppressHydrationWarning>
+    <div className="h-[100dvh] w-screen bg-neo-black text-neo-white flex overflow-hidden" suppressHydrationWarning>
       <AppSidebar user={user} chats={chats} documents={documents} />
-      <div className="flex-1 flex flex-col min-w-0 h-screen relative">
+      <div className="flex-1 flex flex-col min-w-0 h-[100dvh] relative">
         <AppHeader user={user} />
         <main className="relative flex-1 overflow-y-auto overflow-x-hidden min-h-0">{children}</main>
       </div>

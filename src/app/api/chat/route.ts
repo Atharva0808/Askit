@@ -82,11 +82,8 @@ GUIDELINES:
       if (typeof c === "string") {
         c = c.replace(/\n\n!\[Attached\]\(data:image\/[^)]+\)/g, "");
       }
-      return { role: m.role, content: c };
-    }) as {
-      role: "user" | "assistant" | "system";
-      content: string;
-    }[]
+      return { ...(m as any), role: m.role as any, content: c };
+    }) as any
   );
 
   // Determine if this is a vision request
@@ -154,12 +151,10 @@ GUIDELINES:
             const contextBlock = chunks
               .map((c, i) => `[[chunk ${i + 1} | ${c.id}]]\n${c.content}`)
               .join("\n\n");
-            messagesToSend.splice(messagesToSend.length - 1, 0, {
-              role: "system",
-              content:
-                "Relevant document context (use this if helpful; cite chunk ids you used):\n\n" +
-                contextBlock.slice(0, 4000), // Reduced to 4000 chars to avoid Groq Free Tier TPM Limit crashes
-            });
+            const lastMsg = messagesToSend[messagesToSend.length - 1];
+            if (lastMsg && lastMsg.role === "user" && typeof lastMsg.content === "string") {
+              lastMsg.content += `\n\n[Internal Context: Use this retrieved document text if relevant to the query (cite chunk ids):\n${contextBlock.slice(0, 4000)}]`;
+            }
           }
         } catch {
           /* ignore rag errors */
