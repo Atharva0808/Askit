@@ -1,5 +1,5 @@
+import { google } from "@ai-sdk/google";
 import { groq } from "@ai-sdk/groq";
-import { openai } from "@ai-sdk/openai";
 import { convertToCoreMessages, createDataStreamResponse, streamText, tool } from "ai";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -158,7 +158,7 @@ GUIDELINES:
               role: "system",
               content:
                 "Relevant document context (use this if helpful; cite chunk ids you used):\n\n" +
-                contextBlock.slice(0, 12000),
+                contextBlock.slice(0, 4000), // Reduced to 4000 chars to avoid Groq Free Tier TPM Limit crashes
             });
           }
         } catch {
@@ -194,10 +194,11 @@ GUIDELINES:
     }
   }
 
-  // Select model: OpenAI for vision, Groq for fast text/tool use
+  // Select free model: Gemini supports vision beautifully, while Groq handles multi-turn RAG/tools aggressively fast natively.
+  // Both are 100% free!
   const activeModel = hasImage
-    ? openai("gpt-4o-mini")
-    : groq("llama-3.3-70b-versatile");
+    ? (google("gemini-2.5-flash") as any)
+    : (groq("llama-3.3-70b-versatile") as any);
 
   try {
     const mcpToolDefs = await listMCPTools(userMcpServers);
@@ -220,7 +221,8 @@ GUIDELINES:
     }
 
     const commonOpts = {
-      model: activeModel,
+      // @ts-ignore: Mismatch between ai v4 and @ai-sdk/google v3 types
+      model: activeModel as any,
       messages: messagesToSend,
       onFinish: chatId
         ? async ({ text }: { text: string }) => {
@@ -245,12 +247,14 @@ GUIDELINES:
     };
 
     const result = hasImage
+      // @ts-ignore: Mismatch between ai v4 and @ai-sdk/google v3 types
       ? streamText({
           ...commonOpts,
           system:
             "You are Askit, an AI assistant with vision capabilities. Analyze images thoroughly and respond in markdown. Be detailed and helpful.",
           maxSteps: 1,
         })
+      // @ts-ignore: Mismatch between ai v4 and @ai-sdk/google v3 types
       : streamText({
           ...commonOpts,
           system: systemPrompt,
@@ -485,6 +489,11 @@ GUIDELINES:
     let message = "An unexpected error occurred. Please try again.";
     if (error instanceof Error) {
       if (
+        error.message.includes("GOOGLE_GENERATIVE_AI_API_KEY") ||
+        error.message.toLowerCase().includes("google") && error.message.toLowerCase().includes("api key")
+      ) {
+        message = "Missing/invalid Google Gemini API key (GOOGLE_GENERATIVE_AI_API_KEY).";
+      } else if (
         error.message.includes("OPENAI_API_KEY") ||
         error.message.toLowerCase().includes("openai") && error.message.toLowerCase().includes("api key")
       ) {
@@ -496,9 +505,11 @@ GUIDELINES:
         message = "Missing/invalid Groq API key (GROQ_API_KEY).";
       } else if (
         error.message.includes("rate limit") ||
-        error.message.includes("429")
+        error.message.includes("429") ||
+        error.message.includes("Failed after 3 attempt") ||
+        error.message.includes("insufficient_quota")
       ) {
-        message = "Rate limit reached. Please wait a moment and try again.";
+        message = "Rate limit or quota reached. Please check your OpenAI/Groq billing or try again later.";
       } else if (error.message.includes("ECONNREFUSED") || error.message.includes("fetch failed")) {
         message = "Failed to connect to an external server or MCP host. Please check your connections.";
       } else if (error.message.includes("model")) {
@@ -508,16 +519,10 @@ GUIDELINES:
       }
     }
 
-    // Consistently return 500 with a detailed inner error that useChat can parse
-    return createDataStreamResponse({
-      status: 500,
-      execute(writer) {
-        // Encode the error properly for the AI SDK client
-        throw new Error(message);
-      },
-      onError() {
-        return message;
-      },
+    // Return pure Response so NextJS/useChat doesn't swallow/mask the error message
+    return new Response(message, { 
+      status: 400, 
+      headers: { "X-Error": "true" } 
     });
   }
 }

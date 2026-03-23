@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { PWARegistration } from "@/components/pwa-registration";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -20,7 +22,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body className="min-h-screen antialiased bg-neo-black text-neo-white" suppressHydrationWarning>
+        <PWARegistration />
         {children}
       </body>
     </html>

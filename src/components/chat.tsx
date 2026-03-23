@@ -545,9 +545,9 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
     append({ role: "user", content: text });
   }
 
-   async function forceSubmit(overrideContent?: string) {
+  async function forceSubmit(overrideContent?: string) {
     if (isLoading) return;
-    const finalContent = overrideContent || input.trim() || voiceTranscriptRef.current.trim() || (imageDataUrl ? "Analyze this image." : "");
+    const finalContent = overrideContent || (input || "").trim() || voiceTranscriptRef.current.trim() || (imageDataUrl ? "Analyze this image." : (attachedFile ? "Please analyze the attached document." : ""));
     if (!finalContent && !imageDataUrl && !attachedFile) return;
 
     const currentImg = imageDataUrl;
@@ -933,7 +933,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
               <button
                 ref={submitBtnRef}
                 type="submit"
-                disabled={!input.trim() && !imageDataUrl && !attachedFile}
+                disabled={(!input || !input.trim()) && !imageDataUrl && !attachedFile}
                 className="shrink-0 p-2 rounded-xl bg-white text-black disabled:opacity-20 disabled:bg-white/10 disabled:text-neo-white-muted hover:bg-gray-100 active:scale-95 transition-all duration-150 outline-none touch-manipulation"
                 title="Send"
               >

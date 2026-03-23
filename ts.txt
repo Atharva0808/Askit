@@ -1,0 +1,39 @@
+src/app/api/chat/route.ts(2,10): error TS2724: '"ai"' has no exported member named 'convertToCoreMessages'. Did you mean 'convertToModelMessages'?
+src/app/api/chat/route.ts(2,33): error TS2724: '"ai"' has no exported member named 'createDataStreamResponse'. Did you mean 'createTextStreamResponse'?
+src/app/api/chat/route.ts(234,36): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/app/api/chat/route.ts(253,11): error TS2353: Object literal may only specify known properties, and 'maxSteps' does not exist in type 'CallSettings & (Prompt & { model: LanguageModel; tools?: ToolSet | undefined; toolChoice?: ToolChoice<ToolSet> | undefined; ... 23 more ...; _internal?: { ...; } | undefined; })'.
+src/app/api/chat/route.ts(259,11): error TS2353: Object literal may only specify known properties, and 'maxSteps' does not exist in type 'CallSettings & (Prompt & { model: LanguageModel; tools?: { search_documents: Tool<any, any>; web_search: Tool<any, any>; web_fetch: Tool<...>; mcp_call: Tool<...>; get_datetime: Tool<...>; } | undefined; ... 24 more ...; _internal?: { ...; } | undefined; })'.
+src/app/api/chat/route.ts(267,15): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '({ query }: { query: any; }) => Promise<{ results: { content: string; id: string; }[]; }>' is not assignable to type 'undefined'.
+src/app/api/chat/route.ts(267,33): error TS7031: Binding element 'query' implicitly has an 'any' type.
+src/app/api/chat/route.ts(284,15): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '({ query }: { query: any; }) => Promise<{ query: any; results: string; source: string; error?: undefined; } | { error: string; results: string; query?: undefined; source?: undefined; }>' is not assignable to type 'undefined'.
+src/app/api/chat/route.ts(284,33): error TS7031: Binding element 'query' implicitly has an 'any' type.
+src/app/api/chat/route.ts(362,15): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '({ url }: { url: any; }) => Promise<{ error: string; content: null; url?: undefined; } | { content: string; url: any; error?: undefined; }>' is not assignable to type 'undefined'.
+src/app/api/chat/route.ts(362,33): error TS7031: Binding element 'url' implicitly has an 'any' type.
+src/app/api/chat/route.ts(409,15): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '({ toolKey, args }: { toolKey: any; args: any; }) => Promise<{ error: string; toolKey?: undefined; result?: undefined; } | { toolKey: any; result: string | null; error?: undefined; }>' is not assignable to type 'undefined'.
+src/app/api/chat/route.ts(409,33): error TS7031: Binding element 'toolKey' implicitly has an 'any' type.
+src/app/api/chat/route.ts(409,42): error TS7031: Binding element 'args' implicitly has an 'any' type.
+src/app/api/chat/route.ts(454,15): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '() => Promise<{ iso: string; date: string; time: string; timezone: string; unix: number; }>' is not assignable to type 'undefined'.
+src/app/api/chat/route.ts(479,19): error TS2551: Property 'toDataStreamResponse' does not exist on type 'StreamTextResult<ToolSet, Output<string, string, never>> | StreamTextResult<{ search_documents: Tool<any, any>; web_search: Tool<any, any>; web_fetch: Tool<...>; mcp_call: Tool<...>; get_datetime: Tool<...>; }, Output<...>>'. Did you mean 'toTextStreamResponse'?
+  Property 'toDataStreamResponse' does not exist on type 'StreamTextResult<ToolSet, Output<string, string, never>>'.
+src/components/chat.tsx(9,15): error TS2724: '"ai"' has no exported member named 'Message'. Did you mean 'UIMessage'?
+src/components/chat.tsx(184,5): error TS2339: Property 'input' does not exist on type 'UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>'.
+src/components/chat.tsx(185,5): error TS2339: Property 'handleInputChange' does not exist on type 'UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>'.
+src/components/chat.tsx(186,5): error TS2339: Property 'isLoading' does not exist on type 'UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>'.
+src/components/chat.tsx(189,5): error TS2339: Property 'reload' does not exist on type 'UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>'.
+src/components/chat.tsx(191,5): error TS2339: Property 'append' does not exist on type 'UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>'.
+src/components/chat.tsx(192,5): error TS2339: Property 'setInput' does not exist on type 'UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>'.
+src/components/chat.tsx(194,5): error TS2353: Object literal may only specify known properties, and 'api' does not exist in type 'UseChatOptions<UIMessage<unknown, UIDataTypes, UITools>>'.
+src/components/chat.tsx(456,11): error TS2345: Argument of type '{ id: string; role: "user" | "assistant" | "system"; content: string; }[]' is not assignable to parameter of type 'UIMessage<unknown, UIDataTypes, UITools>[] | ((messages: UIMessage<unknown, UIDataTypes, UITools>[]) => UIMessage<unknown, UIDataTypes, UITools>[])'.
+  Type '{ id: string; role: "user" | "assistant" | "system"; content: string; }[]' is not assignable to type 'UIMessage<unknown, UIDataTypes, UITools>[]'.
+    Property 'parts' is missing in type '{ id: string; role: "user" | "assistant" | "system"; content: string; }' but required in type 'UIMessage<unknown, UIDataTypes, UITools>'.
+src/components/chat.tsx(745,50): error TS7006: Parameter 'tool' implicitly has an 'any' type.
