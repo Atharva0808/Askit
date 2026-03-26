@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FeatureSection } from "@/components/ui/feature-section";
 import { VelocityScroll } from "@/components/ui/velocity-scroll";
+import { ScrollIndicator } from "@/components/ui/scroll-indicator";
 
 function SakuraIcon({ className = "w-7 h-7" }: { className?: string }) {
   return (
@@ -26,7 +27,8 @@ function SakuraIcon({ className = "w-7 h-7" }: { className?: string }) {
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-neo-black text-neo-white overflow-hidden">
+    <div className="min-h-screen bg-neo-black text-neo-white overflow-x-hidden">
+      <ScrollIndicator />
       <header className="relative z-10 flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 md:px-12">
         <div className="flex items-center gap-2">
           <SakuraIcon className="w-7 h-7 sm:w-8 sm:h-8" />

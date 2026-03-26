@@ -1,0 +1,26 @@
+node_modules
+.next
+.git
+.vscode
+.env
+.env.local
+.env.local.example
+*.log
+Dockerfile
+docker-compose.yml
+README.md
+Artifacts
+# package-lock.json
+# bun.lockb
+public/sakura.png
+test*.js
+test*.mjs
+*.txt
+*.pdf
+public/manifest.json
+public/sw.js
+public/sakura.png
+# Keep public/ but ignore bulky artifacts
+public/*.png
+!public/favicon.svg
+!public/sakura.png
