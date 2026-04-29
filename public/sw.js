@@ -14,6 +14,9 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Skip cross-origin requests (like Supabase, Google Auth, etc.)
+  if (!event.request.url.startsWith(self.location.origin)) return;
+
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() => {
