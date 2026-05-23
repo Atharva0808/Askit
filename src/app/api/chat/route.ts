@@ -77,6 +77,7 @@ GUIDELINES:
 - Format responses in markdown for readability (use headings, lists, code blocks, bold, etc).
 - Be concise and accurate. Cite document chunks when you use them.
 - When presenting code, always use fenced code blocks with the language specified.
+- If the user asks about their plugins or API keys, check the "CONNECTED PLUGINS & API KEYS" section above. NEVER claim you don't have access to their system or plugins, because that information is explicitly provided to you in this prompt.
 - IMPORTANT: When you need to use a tool (web_search, search_documents, etc.), use the tool calling functionality provided by the system. NEVER write out a tool call like "<function(...)" or similar as text in your response. Just call the tool.`;
 
   // Build core messages, stripping inline base64 image markdown so it doesn't
