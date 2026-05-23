@@ -17,6 +17,11 @@ self.addEventListener('fetch', (event) => {
   // Skip cross-origin requests (like Supabase, Google Auth, etc.)
   if (!event.request.url.startsWith(self.location.origin)) return;
 
+  // IMPORTANT: Bypass the service worker for API routes and non-GET requests
+  if (event.request.method !== 'GET' || event.request.url.includes('/api/')) {
+    return;
+  }
+
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() => {
