@@ -54,7 +54,7 @@ export async function POST(req: Request) {
        If a tool asks for a "token" or "apiKey", you can assume the system has provided it from these plugins.`
     : "";
 
-  const systemPrompt = `You are Askit, a helpful AI assistant with access to the user's documents and powerful tools.
+  let systemPrompt = `You are Askit, a helpful AI assistant with access to the user's documents and powerful tools.
 ${pluginContext}
 
 CAPABILITIES:
@@ -154,10 +154,7 @@ GUIDELINES:
             const contextBlock = chunks
               .map((c, i) => `[[chunk ${i + 1} | ${c.id}]]\n${c.content}`)
               .join("\n\n");
-            const lastMsg = messagesToSend[messagesToSend.length - 1];
-            if (lastMsg && lastMsg.role === "user" && typeof lastMsg.content === "string") {
-              lastMsg.content += `\n\n[Internal Context: Use this retrieved document text if relevant to the query (cite chunk ids):\n${contextBlock.slice(0, 4000)}]`;
-            }
+            systemPrompt += `\n\n[Internal Context: A proactive document search was run for the user's query. Only use this retrieved text if it is highly relevant to answering the user (cite chunk ids):\n${contextBlock.slice(0, 4000)}]`;
           }
         } catch {
           /* ignore rag errors */
