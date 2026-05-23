@@ -196,7 +196,7 @@ GUIDELINES:
   // Both are 100% free!
   const activeModel = hasImage
     ? (google("gemini-2.5-flash") as any)
-    : (groq("llama-3.1-70b-versatile") as any);
+    : (groq("llama-3.1-8b-instant") as any);
 
   try {
     const mcpToolDefs = await listMCPTools(userMcpServers);
