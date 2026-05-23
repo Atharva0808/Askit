@@ -94,23 +94,15 @@ function IconFile({ className = "w-4 h-4" }: { className?: string }) {
   );
 }
 
-function SakuraIcon({ className = "w-8 h-8" }: { className?: string }) {
+function AskitIcon({ className = "w-8 h-8" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <radialGradient id="csg" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#f9a8d4" />
-          <stop offset="100%" stopColor="#ec4899" />
-        </radialGradient>
-      </defs>
-      <g transform="translate(32,32)">
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" />
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(60)" />
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(120)" />
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(180)" />
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(240)" />
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#csg)" opacity="0.9" transform="rotate(300)" />
-        <circle cx="0" cy="0" r="4" fill="#fbbf24" opacity="0.8" />
+      <g transform="translate(32, 32)">
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" />
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(72)" />
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(144)" />
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(216)" />
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(288)" />
       </g>
     </svg>
   );
@@ -643,9 +635,9 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
               className="flex-1 flex flex-col items-center justify-center px-3 sm:px-4"
             >
               <div className="max-w-xl w-full text-center">
-                {/* Sakura Logo Mark */}
+                {/* Askit Logo Mark */}
                 <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-6 flex items-center justify-center">
-                  <SakuraIcon className="w-14 h-14 sm:w-16 sm:h-16" />
+                  <AskitIcon className="w-14 h-14 sm:w-16 sm:h-16" />
                 </div>
                 <h1
                   className="text-2xl sm:text-4xl md:text-5xl mb-3 sm:mb-4 tracking-tight"

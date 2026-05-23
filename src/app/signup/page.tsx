@@ -5,23 +5,15 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useSearchParams } from "next/navigation";
 
-function SakuraIcon({ className = "w-6 h-6" }: { className?: string }) {
+function AskitIcon({ className = "w-6 h-6" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <radialGradient id="sg_signup" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#f9a8d4" />
-          <stop offset="100%" stopColor="#ec4899" />
-        </radialGradient>
-      </defs>
-      <g transform="translate(32,32)">
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg_signup)" opacity="0.9" />
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg_signup)" opacity="0.9" transform="rotate(60)" />
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg_signup)" opacity="0.9" transform="rotate(120)" />
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg_signup)" opacity="0.9" transform="rotate(180)" />
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg_signup)" opacity="0.9" transform="rotate(240)" />
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg_signup)" opacity="0.9" transform="rotate(300)" />
-        <circle cx="0" cy="0" r="4" fill="#fbbf24" opacity="0.8" />
+      <g transform="translate(32, 32)">
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" />
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(72)" />
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(144)" />
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(216)" />
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(288)" />
       </g>
     </svg>
   );
@@ -82,7 +74,7 @@ function SignupForm() {
             href="/"
             className="inline-flex items-center gap-2 font-playfair italic font-bold text-neo-pink text-2xl"
           >
-            <SakuraIcon className="w-6 h-6" />
+            <AskitIcon className="w-6 h-6" />
             Askit
           </Link>
         </div>
@@ -123,7 +115,7 @@ function SignupForm() {
             href="/"
             className="lg:hidden neo-btn neo-btn-ghost text-neo-pink font-playfair italic font-semibold text-lg inline-flex mb-8 items-center gap-2"
           >
-            <SakuraIcon className="w-5 h-5" />
+            <AskitIcon className="w-5 h-5" />
             Askit
           </Link>
 

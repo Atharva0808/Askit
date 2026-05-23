@@ -3,23 +3,15 @@ import { FeatureSection } from "@/components/ui/feature-section";
 import { VelocityScroll } from "@/components/ui/velocity-scroll";
 import { ScrollIndicator } from "@/components/ui/scroll-indicator";
 
-function SakuraIcon({ className = "w-7 h-7" }: { className?: string }) {
+function AskitIcon({ className = "w-7 h-7" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <radialGradient id="sg" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#f9a8d4"/>
-          <stop offset="100%" stopColor="#ec4899"/>
-        </radialGradient>
-      </defs>
-      <g transform="translate(32,32)">
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg)" opacity="0.9"/>
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg)" opacity="0.9" transform="rotate(60)"/>
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg)" opacity="0.9" transform="rotate(120)"/>
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg)" opacity="0.9" transform="rotate(180)"/>
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg)" opacity="0.9" transform="rotate(240)"/>
-        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sg)" opacity="0.9" transform="rotate(300)"/>
-        <circle cx="0" cy="0" r="4" fill="#fbbf24" opacity="0.8"/>
+      <g transform="translate(32, 32)">
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" />
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(72)" />
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(144)" />
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(216)" />
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(288)" />
       </g>
     </svg>
   );
@@ -31,7 +23,7 @@ export default function LandingPage() {
       <ScrollIndicator />
       <header className="relative z-10 flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 md:px-12">
         <div className="flex items-center gap-2">
-          <SakuraIcon className="w-7 h-7 sm:w-8 sm:h-8" />
+          <AskitIcon className="w-7 h-7 sm:w-8 sm:h-8" />
           <span
             className="text-lg tracking-tight"
             style={{ fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontWeight: 700, color: "var(--neo-pink)" }}

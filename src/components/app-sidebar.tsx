@@ -278,8 +278,7 @@ export function AppSidebar({
             onClick={() => window.dispatchEvent(new CustomEvent("reset-chat"))}
           >
             <svg className="w-8 h-8 shrink-0" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs><radialGradient id="sbsg" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#f9a8d4"/><stop offset="100%" stopColor="#ec4899"/></radialGradient></defs>
-              <g transform="translate(32,32)"><ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sbsg)" opacity="0.9"/><ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sbsg)" opacity="0.9" transform="rotate(60)"/><ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sbsg)" opacity="0.9" transform="rotate(120)"/><ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sbsg)" opacity="0.9" transform="rotate(180)"/><ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sbsg)" opacity="0.9" transform="rotate(240)"/><ellipse cx="0" cy="-12" rx="7" ry="12" fill="url(#sbsg)" opacity="0.9" transform="rotate(300)"/><circle cx="0" cy="0" r="4" fill="#fbbf24" opacity="0.8"/></g>
+              <g transform="translate(32, 32)"><rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(72)" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(144)" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(216)" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(288)" /></g>
             </svg>
             <span
               className="text-lg tracking-tight"
