@@ -476,7 +476,14 @@ GUIDELINES:
         });
 
     // Use toDataStreamResponse for compatibility with the ai/react useChat hook
-    return result.toDataStreamResponse();
+    return result.toDataStreamResponse({
+      getErrorMessage: (err) => {
+        if (err == null) return "Unknown error during streaming";
+        if (typeof err === "string") return err;
+        if (err instanceof Error) return err.message;
+        return JSON.stringify(err);
+      }
+    });
   } catch (error) {
     console.error("Askit chat error details:", {
        message: error instanceof Error ? error.message : String(error),
