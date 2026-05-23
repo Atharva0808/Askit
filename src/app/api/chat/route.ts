@@ -14,7 +14,10 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return new Response("Unauthorized", { status: 401 });
+    return new Response(JSON.stringify({ error: "Unauthorized access. Please log in." }), { 
+      status: 401,
+      headers: { "Content-Type": "application/json", "X-Error": "true" }
+    });
   }
 
   let body: {
@@ -514,10 +517,10 @@ GUIDELINES:
       }
     }
 
-    // Return pure Response so NextJS/useChat doesn't swallow/mask the error message
-    return new Response(message, { 
+    // Return JSON Response so NextJS/useChat correctly parses the error message
+    return new Response(JSON.stringify({ error: message }), { 
       status: 400, 
-      headers: { "X-Error": "true" } 
+      headers: { "Content-Type": "application/json", "X-Error": "true" } 
     });
   }
 }

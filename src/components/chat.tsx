@@ -159,6 +159,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
   const [loaded, setLoaded] = useState(!initialChatId);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [dismissedError, setDismissedError] = useState(false);
+  const [lastApiError, setLastApiError] = useState<string | null>(null);
 
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState("");
@@ -197,6 +198,23 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
       setImageDataUrl(null);
       setAttachedFile(null);
       router.refresh();
+    },
+    onResponse: async (response) => {
+      if (!response.ok) {
+        try {
+          const text = await response.clone().text();
+          try {
+            const json = JSON.parse(text);
+            setLastApiError(json.error || json.message || text);
+          } catch {
+            setLastApiError(text || `Server error (${response.status})`);
+          }
+        } catch {
+          setLastApiError(`Server error (${response.status})`);
+        }
+      } else {
+        setLastApiError(null);
+      }
     },
     onError: () => setDismissedError(false),
   });
@@ -790,7 +808,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
 
             {showError && (
               <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-xs sm:text-sm max-w-lg neo-fade-in">
-                <span className="flex-1">{error.message || "Something went wrong."}</span>
+                <span className="flex-1">{lastApiError || error.message || "Something went wrong."}</span>
                 <button type="button" onClick={() => setDismissedError(true)} className="shrink-0 p-1 rounded hover:bg-red-500/20 transition-colors">
                   <IconX className="w-3.5 h-3.5" />
                 </button>
