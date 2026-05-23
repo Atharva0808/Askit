@@ -25,6 +25,8 @@ export async function POST(req: Request) {
     imageUrl?: string;
     chatId?: string;
     data?: Record<string, unknown>;
+    mcpServers?: string[];
+    plugins?: Array<{ id: string, domain: string, name: string, key?: string }>;
   };
 
   try {
@@ -38,8 +40,8 @@ export async function POST(req: Request) {
 
   const { messages: rawMessages, chatId, data } = body;
   const imageUrl = (data?.imageUrl as string) || body.imageUrl;
-  const userMcpServers = (data?.mcpServers as string[]) || [];
-  const userPlugins = (data?.plugins as Array<{ id: string, domain: string, name: string, key?: string }>) || [];
+  const userMcpServers = (data?.mcpServers as string[]) || body.mcpServers || [];
+  const userPlugins = (data?.plugins as Array<{ id: string, domain: string, name: string, key?: string }>) || body.plugins || [];
 
   if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
     return new Response(JSON.stringify({ error: "No messages provided" }), {
