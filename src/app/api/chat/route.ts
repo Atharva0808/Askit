@@ -83,8 +83,7 @@ GUIDELINES:
 - You can understand images: the user may send an image; describe or answer based on it when relevant.
 - You can handle voice input: the user may speak to you; respond naturally.
 - Format responses in markdown for readability (use headings, lists, code blocks, bold, etc).
-- Be concise and accurate. Cite document chunks when you use them.
-- When presenting code, always use fenced code blocks with the language specified.
+- CRITICAL & MANDATORY: After executing any tool (web_search, search_documents, youtube_api, github_api, etc.), you MUST read the tool output and write a complete, clear, detailed markdown response summarizing the findings for the user. NEVER stop or leave an empty response after a tool executes.
 - If the user asks about their plugins or API keys, check the "CONNECTED PLUGINS & API KEYS" section above. NEVER claim you don't have access to their system or plugins, because that information is explicitly provided to you in this prompt.
 - IMPORTANT: When you need to use a tool (web_search, search_documents, etc.), use the tool calling functionality provided by the system. NEVER write out a tool call like "<function(...)" or similar as text in your response. Just call the tool.`;
 
@@ -203,11 +202,12 @@ GUIDELINES:
     }
   }
 
-  // Select free model: Gemini 1.5 Flash supports vision (with OpenAI gpt-4o-mini fallback), Groq handles text & tools.
+  // Select model: Gemini 1.5 Flash for vision, Groq Llama 3.3 70B Versatile for text & tools (with OpenAI gpt-4o-mini fallback).
   const hasGoogleKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  const hasGroqKey = !!process.env.GROQ_API_KEY;
   const activeModel = hasImage
     ? (hasGoogleKey ? (google("gemini-1.5-flash") as any) : (openai("gpt-4o-mini") as any))
-    : (groq("llama-3.1-8b-instant") as any);
+    : (hasGroqKey ? (groq("llama-3.3-70b-versatile") as any) : (openai("gpt-4o-mini") as any));
 
   try {
     const mcpToolDefs = await listMCPTools(userMcpServers);
