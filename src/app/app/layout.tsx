@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
+import { OnekoCat } from "@/components/oneko";
 
 export default async function AppLayout({
   children,
@@ -24,6 +25,7 @@ export default async function AppLayout({
 
   return (
     <div className="h-[100dvh] w-screen bg-neo-black text-neo-white flex overflow-hidden" suppressHydrationWarning>
+      <OnekoCat />
       <AppSidebar user={user} chats={chats} documents={documents} />
       <div className="flex-1 flex flex-col min-w-0 h-[100dvh] relative">
         <AppHeader user={user} />
