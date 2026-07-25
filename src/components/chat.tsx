@@ -878,7 +878,14 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
 
                       <div className="prose prose-invert prose-p:leading-relaxed max-w-none text-[13px] sm:text-[14px] leading-relaxed">
                         <MarkdownRenderer
-                          content={m.content}
+                          content={
+                            typeof m.content === "string"
+                              ? m.content
+                                  .replace(/<(web_search|search_documents|youtube_api|spotify_api|github_api|function[\w_]*)[^>]*>[\s\S]*?<\/\1>/gi, "")
+                                  .replace(/<(web_search|search_documents|youtube_api|spotify_api|github_api|function[\w_]*)[^>]*>[\s\S]*/gi, "")
+                                  .trim()
+                              : m.content
+                          }
                           onOpenArtifact={(art) => {
                             setActiveArtifact(art);
                             setIsArtifactOpen(true);

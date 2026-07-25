@@ -85,9 +85,7 @@ GUIDELINES:
 - You can understand images: the user may send an image; describe or answer based on it when relevant.
 - You can handle voice input: the user may speak to you; respond naturally.
 - Format responses in markdown for readability (use headings, lists, code blocks, bold, etc).
-- CRITICAL & MANDATORY: After executing any tool (web_search, search_documents, youtube_api, github_api, etc.), you MUST read the tool output and write a complete, clear, detailed markdown response summarizing the findings for the user. NEVER stop or leave an empty response after a tool executes.
-- If the user asks about their plugins or API keys, check the "CONNECTED PLUGINS & API KEYS" section above. NEVER claim you don't have access to their system or plugins, because that information is explicitly provided to you in this prompt.
-- IMPORTANT: When you need to use a tool (web_search, search_documents, etc.), use the tool calling functionality provided by the system. NEVER write out a tool call like "<function(...)" or similar as text in your response. Just call the tool.`;
+- CRITICAL: Never write tool execution tags (such as XML tags or JSON function strings like <web_search>) into your response text. Perform all tool calls strictly through the system's native function calling interface.`;
 
   // Build core messages, stripping inline base64 image markdown so it doesn't
   // confuse the text model. We send the image via the proper multimodal API.
