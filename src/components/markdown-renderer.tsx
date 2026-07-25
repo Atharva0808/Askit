@@ -73,7 +73,10 @@ export function MarkdownRenderer({
                           }
                           className="text-[11px] px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 hover:bg-zinc-700 transition-all font-medium flex items-center gap-1"
                         >
-                          <span>⚡ Canvas</span>
+                          <svg className="w-3 h-3 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                          </svg>
+                          <span>Canvas</span>
                         </button>
                       )}
                       <CopyCodeButton text={text} />
