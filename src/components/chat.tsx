@@ -89,6 +89,54 @@ function ToolInvocationCard({ tool }: { tool: any }) {
   );
 }
 
+/* --- Dynamic Live Agent Reasoning & Wave Indicator (Option 4) --- */
+function ThinkingIndicator() {
+  const [statusIdx, setStatusIdx] = useState(0);
+
+  const statuses = [
+    { icon: "🧠", text: "Analyzing query & intent..." },
+    { icon: "🔍", text: "Retrieving web & document data..." },
+    { icon: "⚡", text: "Processing & evaluating facts..." },
+    { icon: "✍️", text: "Synthesizing response..." },
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStatusIdx((prev) => (prev + 1) % statuses.length);
+    }, 2200);
+    return () => clearInterval(timer);
+  }, [statuses.length]);
+
+  const current = statuses[statusIdx];
+
+  return (
+    <div className="flex w-full justify-start neo-fade-in my-2">
+      <div className="inline-flex items-center gap-3 px-3.5 py-2 rounded-xl bg-zinc-900/90 border border-zinc-800/80 shadow-lg backdrop-blur-md text-xs font-medium text-zinc-300 transition-all duration-300">
+        {/* Animated Fluid Equalizer Bar */}
+        <div className="flex items-end gap-1 h-3.5 w-3.5 justify-center py-0.5 shrink-0">
+          <span className="w-0.5 bg-emerald-400 rounded-full animate-[pulse_0.8s_ease-in-out_infinite_100ms] h-full" />
+          <span className="w-0.5 bg-emerald-400/80 rounded-full animate-[pulse_0.8s_ease-in-out_infinite_300ms] h-2.5" />
+          <span className="w-0.5 bg-emerald-400/60 rounded-full animate-[pulse_0.8s_ease-in-out_infinite_500ms] h-3.5" />
+        </div>
+
+        {/* Live Status Indicator */}
+        <div className="flex items-center gap-1.5 min-w-[210px] transition-all duration-300">
+          <span className="text-xs">{current.icon}</span>
+          <span className="text-zinc-300 text-xs font-normal tracking-wide animate-pulse">
+            {current.text}
+          </span>
+        </div>
+
+        {/* Pulsing Status Dot */}
+        <span className="relative flex h-2 w-2 ml-1 shrink-0">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
 /* --- SVG Icons --- */
 function IconImage({ className = "w-5 h-5" }: { className?: string }) {
   return (
@@ -873,16 +921,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
             ))}
 
             {isLoading && messages.length > 0 && messages[messages.length - 1]?.role === "user" && (
-              <div className="flex w-full justify-start neo-fade-in">
-                <div className="flex items-center gap-2 px-3 py-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-pink-400/60 animate-bounce" />
-                    <span className="w-2 h-2 rounded-full bg-pink-400/60 animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-2 h-2 rounded-full bg-pink-400/60 animate-bounce" style={{ animationDelay: "300ms" }} />
-                  </div>
-                  <span className="text-xs text-neo-white-muted/40 ml-2">Thinking...</span>
-                </div>
-              </div>
+              <ThinkingIndicator />
             )}
 
             {showError && (
