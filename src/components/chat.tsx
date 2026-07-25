@@ -89,7 +89,7 @@ function ToolInvocationCard({ tool }: { tool: any }) {
   );
 }
 
-/* --- Executive Minimalist Loading Indicator --- */
+/* --- Branded Askit Sparkle Pulse Loading Indicator (Concept 1) --- */
 function ThinkingIndicator() {
   const [statusIdx, setStatusIdx] = useState(0);
 
@@ -109,12 +109,15 @@ function ThinkingIndicator() {
 
   return (
     <div className="flex w-full justify-start neo-fade-in my-2">
-      <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-zinc-800 text-xs font-sans text-zinc-300 shadow-sm backdrop-blur-sm">
-        {/* Minimal Spinner Ring */}
-        <span className="w-3 h-3 border-2 border-zinc-600 border-t-zinc-200 rounded-full animate-spin shrink-0" />
-        
-        {/* Status Text */}
-        <span className="text-zinc-300 text-xs font-normal tracking-wide">
+      <div className="inline-flex items-center gap-3 px-3.5 py-2 rounded-full bg-zinc-900/90 border border-zinc-800/90 shadow-md backdrop-blur-md text-xs font-sans text-zinc-200 transition-all duration-300">
+        {/* Askit Rotating Sparkle Icon with Ambient Glow */}
+        <div className="relative flex items-center justify-center w-4 h-4 shrink-0">
+          <div className="absolute inset-0 rounded-full bg-pink-500/40 blur-sm animate-pulse" />
+          <AskitIcon className="w-4 h-4 animate-[spin_4s_linear_infinite] relative z-10" />
+        </div>
+
+        {/* Dynamic Status Text */}
+        <span className="text-zinc-200 text-xs font-medium tracking-wide animate-pulse">
           {statuses[statusIdx]}
         </span>
       </div>
