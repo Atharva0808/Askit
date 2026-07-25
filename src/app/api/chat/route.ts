@@ -295,72 +295,100 @@ GUIDELINES:
               execute: async ({ query }) => {
                 try {
                   const encoded = encodeURIComponent(query);
-                  // 1. Try HTML search for detailed results (better for news/current events)
-                  const htmlRes = await fetch(
-                    `https://html.duckduckgo.com/html/?q=${encoded}`,
-                    {
-                      headers: {
-                        "User-Agent":
-                          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-                        "Accept-Language": "en-US,en;q=0.9",
-                      },
-                      cache: "no-store",
-                    }
-                  );
-
                   let resultsText = "";
 
-                  if (htmlRes.ok) {
-                    const html = await htmlRes.text();
-                    const results: string[] = [];
-                    // Extract result items (Title, Link, Snippet)
-                    const regex = /class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]+?)<\/a>[\s\S]*?class="result__snippet"[^>]*>([\s\S]+?)<\/a>/g;
-                    let m;
-                    while ((m = regex.exec(html)) !== null && results.length < 8) {
-                      let link = m[1];
-                      if (link.includes("uddg=")) {
-                        try {
-                          const match = /uddg=([^&]+)/.exec(link);
-                          if (match) link = decodeURIComponent(match[1]);
-                        } catch { /* ignore */ }
-                      } else if (link.startsWith("//")) {
-                        link = `https:${link}`;
+                  // 1. Google News RSS search for news/latest/current queries
+                  const isNewsQuery = /news|latest|today|current|updates|headline|breaking/i.test(query);
+                  if (isNewsQuery) {
+                    try {
+                      const newsUrl = `https://news.google.com/rss/search?q=${encoded}&hl=en-US&gl=US&ceid=US:en`;
+                      const newsRes = await fetch(newsUrl, {
+                        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" },
+                        cache: "no-store",
+                      });
+                      if (newsRes.ok) {
+                        const xml = await newsRes.text();
+                        const items: string[] = [];
+                        const regex = /<item>[\s\S]*?<title>([\s\S]*?)<\/title>[\s\S]*?<link>([\s\S]*?)<\/link>[\s\S]*?<pubDate>([\s\S]*?)<\/pubDate>[\s\S]*?<\/item>/g;
+                        let m;
+                        while ((m = regex.exec(xml)) !== null && items.length < 8) {
+                          const title = m[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").trim();
+                          const link = m[2].trim();
+                          const pubDate = m[3].trim();
+                          items.push(`Title: ${title}\nSource: ${link}\nDate: ${pubDate}`);
+                        }
+                        if (items.length > 0) {
+                          resultsText = items.join("\n\n---\n\n");
+                        }
                       }
-                      const title = m[2].replace(/<[^>]+>/g, "").trim();
-                      const snippet = m[3].replace(/<[^>]+>/g, "").trim();
-                      results.push(`Title: ${title}\nSource: ${link}\nSummary: ${snippet}`);
-                    }
-                    if (results.length > 0) {
-                      resultsText = results.join("\n\n---\n\n");
-                    }
+                    } catch { /* fallback */ }
                   }
 
-                  // 2. If HTML failed or returned nothing, fallback to simple JSON API
+                  // 2. DuckDuckGo HTML search for general web queries
                   if (!resultsText) {
-                    const res = await fetch(
-                      `https://api.duckduckgo.com/?q=${encoded}&format=json`,
-                      { headers: { "User-Agent": "Askit-Bot/1.0" } }
-                    );
-                    if (res.ok) {
-                      const data = (await res.json()) as {
-                        AbstractText?: string;
-                        Abstract?: string;
-                        RelatedTopics?: { Text?: string; FirstURL?: string }[];
-                      };
-                      const abstract = data.AbstractText || data.Abstract || "";
-                      const related = (data.RelatedTopics || [])
-                        .slice(0, 5)
-                        .map((t) => t.Text || t.FirstURL || "")
-                        .filter(Boolean);
-                      resultsText = `Direct Answer: ${abstract}\nRelated Information: ${related.join(", ")}`;
-                    }
+                    try {
+                      const htmlRes = await fetch(
+                        `https://html.duckduckgo.com/html/?q=${encoded}`,
+                        {
+                          headers: {
+                            "User-Agent":
+                              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                          },
+                          cache: "no-store",
+                        }
+                      );
+                      if (htmlRes.ok) {
+                        const html = await htmlRes.text();
+                        const results: string[] = [];
+                        const regex = /class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]+?)<\/a>[\s\S]*?class="result__snippet"[^>]*>([\s\S]+?)<\/a>/g;
+                        let m;
+                        while ((m = regex.exec(html)) !== null && results.length < 8) {
+                          let link = m[1];
+                          if (link.includes("uddg=")) {
+                            try {
+                              const match = /uddg=([^&]+)/.exec(link);
+                              if (match) link = decodeURIComponent(match[1]);
+                            } catch { /* ignore */ }
+                          } else if (link.startsWith("//")) {
+                            link = `https:${link}`;
+                          }
+                          const title = m[2].replace(/<[^>]+>/g, "").trim();
+                          const snippet = m[3].replace(/<[^>]+>/g, "").trim();
+                          results.push(`Title: ${title}\nSource: ${link}\nSummary: ${snippet}`);
+                        }
+                        if (results.length > 0) {
+                          resultsText = results.join("\n\n---\n\n");
+                        }
+                      }
+                    } catch { /* fallback */ }
+                  }
+
+                  // 3. Wikipedia API Fallback for topic queries
+                  if (!resultsText) {
+                    try {
+                      const wikiRes = await fetch(
+                        `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encoded}&format=json&origin=*`,
+                        { headers: { "User-Agent": "Askit-Bot/1.0" } }
+                      );
+                      if (wikiRes.ok) {
+                        const data = await wikiRes.json();
+                        const wikiItems = (data.query?.search || []).slice(0, 5).map((item: any) => {
+                          const title = item.title;
+                          const snippet = (item.snippet || "").replace(/<[^>]+>/g, "");
+                          return `Title: ${title}\nSource: https://en.wikipedia.org/wiki/${encodeURIComponent(title)}\nSummary: ${snippet}`;
+                        });
+                        if (wikiItems.length > 0) {
+                          resultsText = wikiItems.join("\n\n---\n\n");
+                        }
+                      }
+                    } catch { /* fallback */ }
                   }
 
                   return {
                     query,
-                    results: resultsText || "No detailed results found. Try a different query.",
-                    source: resultsText ? "Latest Search Data" : "No results"
+                    results: resultsText || "Search completed. No direct web snippets available for this query.",
+                    source: resultsText ? "Web Search Data" : "No results"
                   };
                 } catch (err) {
                   return {
