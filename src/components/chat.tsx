@@ -552,18 +552,16 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
   }, [resetChat]);
 
   useEffect(() => {
-    // 1. If the prop hasn't changed since the last run, do nothing.
-    // This prevents accidental resets on re-renders when 'stop' or others change.
+    // 1. If initialChatId hasn't changed, do nothing
     if (initialChatId === prevInitialChatIdRef.current) return;
 
-    // 2. If the prop changed but matches our internal state, it means we just named this chat.
-    // We update the tracker but skip the reset to keep the current stream alive.
-    if (initialChatId !== null && initialChatId === chatIdRef.current) {
+    // 2. If initialChatId changed, check if we're already streaming/active in this chat session
+    if (initialChatId !== null && initialChatId === chatIdRef.current && messages.length > 0) {
       prevInitialChatIdRef.current = initialChatId;
       return;
     }
 
-    // 3. We are actually switching chats or starting a fresh one. Update tracker and reset.
+    // 3. Update tracker
     prevInitialChatIdRef.current = initialChatId;
 
     if (!initialChatId) {

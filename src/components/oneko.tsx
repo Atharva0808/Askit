@@ -21,7 +21,7 @@ export function OnekoCat() {
     let idleAnimation: string | null = null;
     let idleAnimationFrame = 0;
 
-    const nekoSpeed = 20;
+    const nekoSpeed = 15;
     const spriteSets: Record<string, number[][]> = {
       idle: [[-3, -3]],
       alert: [[-7, -3]],
