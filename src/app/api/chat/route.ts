@@ -202,12 +202,18 @@ GUIDELINES:
     }
   }
 
-  // Select model: Gemini 1.5 Flash for vision, Groq Llama 3.3 70B Versatile for text & tools (with OpenAI gpt-4o-mini fallback).
+  // Select model: Prefer OpenAI gpt-4o-mini or Gemini 1.5 Flash for rock-solid tool calling, fallback to Groq Llama 3.3 70B.
+  const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
   const hasGoogleKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   const hasGroqKey = !!process.env.GROQ_API_KEY;
+
   const activeModel = hasImage
     ? (hasGoogleKey ? (google("gemini-1.5-flash") as any) : (openai("gpt-4o-mini") as any))
-    : (hasGroqKey ? (groq("llama-3.3-70b-versatile") as any) : (openai("gpt-4o-mini") as any));
+    : (hasOpenAIKey
+        ? (openai("gpt-4o-mini") as any)
+        : hasGoogleKey
+          ? (google("gemini-1.5-flash") as any)
+          : (groq("llama-3.3-70b-versatile") as any));
 
   try {
     const mcpToolDefs = await listMCPTools(userMcpServers);
@@ -452,8 +458,8 @@ GUIDELINES:
               description:
                 "Interact with GitHub API. Search repositories, list user repos, or read issue lists. Powered by GitHub Personal Access Token configured in Plugins.",
               parameters: z.object({
-                action: z.enum(["list_user_repos", "search_repos", "get_issues"]).describe("GitHub action"),
-                query: z.string().optional().describe("Search query or repo name (owner/repo for issues)"),
+                action: z.string().describe("GitHub action: list_user_repos, search_repos, or get_issues"),
+                query: z.string().describe("Search query or repo name (owner/repo for issues)"),
               }),
               execute: async ({ action, query }) => {
                 const ghPlugin = userPlugins.find((p) => p.id.toLowerCase().includes("github"));
@@ -502,7 +508,7 @@ GUIDELINES:
                 "Search Spotify tracks, artists, and playlists using Spotify Web API. Powered by Spotify API Key/Token configured in Plugins.",
               parameters: z.object({
                 query: z.string().describe("Search query (song name, artist, or album)"),
-                type: z.enum(["track", "artist", "playlist"]).optional().default("track").describe("Search type"),
+                type: z.string().describe("Search type: track, artist, or playlist"),
               }),
               execute: async ({ query, type }) => {
                 const spotifyPlugin = userPlugins.find((p) => p.id.toLowerCase().includes("spotify"));
@@ -540,7 +546,7 @@ GUIDELINES:
                 "Search YouTube for videos, channels, and playlists using YouTube Data API. Works with YouTube/Google API Key configured in Plugins or system environment.",
               parameters: z.object({
                 query: z.string().describe("Search query or name"),
-                type: z.enum(["video", "channel", "playlist"]).optional().default("video").describe("Search type"),
+                type: z.string().describe("Search type: video, channel, or playlist"),
               }),
               execute: async ({ query, type }) => {
                 const ytPlugin = userPlugins.find((p) => p.id.toLowerCase().includes("youtube") || p.id.toLowerCase().includes("google"));
