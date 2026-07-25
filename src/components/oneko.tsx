@@ -21,7 +21,7 @@ export function OnekoCat() {
     let idleAnimation: string | null = null;
     let idleAnimationFrame = 0;
 
-    const nekoSpeed = 10;
+    const nekoSpeed = 22;
     const spriteSets: Record<string, number[][]> = {
       idle: [[-3, -3]],
       alert: [[-7, -3]],
@@ -159,7 +159,7 @@ export function OnekoCat() {
       if (!nekoEl.isConnected) return;
       if (!lastFrameTimestamp) lastFrameTimestamp = timestamp;
 
-      if (timestamp - lastFrameTimestamp > 100) {
+      if (timestamp - lastFrameTimestamp > 50) {
         lastFrameTimestamp = timestamp;
         frame();
       }

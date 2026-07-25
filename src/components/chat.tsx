@@ -275,7 +275,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const resendAfterEditRef = useRef(false);
-  const prevInitialChatIdRef = useRef(initialChatId);
+  const prevInitialChatIdRef = useRef<string | null | undefined>(undefined);
   const router = useRouter();
 
   useEffect(() => {
