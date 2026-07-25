@@ -212,15 +212,17 @@ GUIDELINES:
   const googleProvider = userGoogleKey ? createGoogleGenerativeAI({ apiKey: userGoogleKey }) : google;
 
   // Model Selection Priority:
-  // For Vision: Prefer Google Gemini 1.5 Flash -> fallback to OpenAI gpt-4o-mini
-  // For Text & Tools: Prefer Groq Llama 3.3 70B -> fallback to Google Gemini 1.5 Flash -> fallback to OpenAI gpt-4o-mini
+  // For Vision (hasImage): Prefer OpenAI gpt-4o-mini -> fallback to Google gemini-2.0-flash-exp
+  // For Text & Tools: Prefer Groq Llama 3.3 70B -> fallback to OpenAI gpt-4o-mini -> fallback to Google gemini-2.0-flash-exp
   const activeModel = hasImage
-    ? (userGoogleKey ? (googleProvider("gemini-1.5-flash-latest") as any) : (openaiProvider("gpt-4o-mini") as any))
+    ? (userOpenAIKey ? (openaiProvider("gpt-4o-mini") as any) : userGoogleKey ? (googleProvider("gemini-2.0-flash-exp") as any) : (openaiProvider("gpt-4o-mini") as any))
     : (userGroqKey
         ? (groqProvider("llama-3.3-70b-versatile") as any)
-        : userGoogleKey
-          ? (googleProvider("gemini-1.5-flash-latest") as any)
-          : (openaiProvider("gpt-4o-mini") as any));
+        : userOpenAIKey
+          ? (openaiProvider("gpt-4o-mini") as any)
+          : userGoogleKey
+            ? (googleProvider("gemini-2.0-flash-exp") as any)
+            : (openaiProvider("gpt-4o-mini") as any));
 
   try {
     const mcpToolDefs = await listMCPTools(userMcpServers);
