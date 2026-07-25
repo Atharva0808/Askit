@@ -280,14 +280,9 @@ export function AppSidebar({
             <svg className="w-6 h-6 shrink-0 text-pink-500" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
               <g transform="translate(32, 32)"><rect x="-4" y="-26" width="12" height="28" rx="6" fill="currentColor" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="currentColor" transform="rotate(72)" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="currentColor" transform="rotate(144)" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="currentColor" transform="rotate(216)" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="currentColor" transform="rotate(288)" /></g>
             </svg>
-            <div className="flex items-center gap-1.5">
-              <span className="text-base font-bold tracking-tight text-zinc-100 font-sans">
-                Askit
-              </span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800">
-                2.0
-              </span>
-            </div>
+            <span className="text-base font-bold tracking-tight text-zinc-100 font-sans antialiased select-none">
+              Askit
+            </span>
           </Link>
           <button
             onClick={() => setIsOpen(false)}
@@ -321,9 +316,9 @@ export function AppSidebar({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search chats..."
-              className="w-full pl-8 pr-8 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 bg-zinc-900/90 border border-zinc-800/80 outline-none focus:border-zinc-700 transition-colors rounded-lg font-sans"
+              className="w-full pl-8 pr-10 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 bg-zinc-900/90 border border-zinc-800/80 outline-none focus:border-zinc-700 transition-colors rounded-lg font-sans antialiased"
             />
-            <kbd className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-mono text-zinc-500 bg-zinc-800/80 border border-zinc-700/50 px-1 py-0.2 rounded">
+            <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-zinc-400 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded shadow-xs antialiased select-none pointer-events-none">
               ⌘K
             </kbd>
           </div>
