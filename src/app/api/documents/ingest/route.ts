@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { embedChunks } from "@/lib/rag/embed";
 
 const CHUNK_SIZE = 800;
 const CHUNK_OVERLAP = 100;
@@ -129,11 +130,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ documentId: doc.id, chunks: 0 });
   }
 
-  // With Groq-only setup we don't use vector embeddings; just store chunks.
+  const embeddings = await embedChunks(texts);
+
   const rows = texts.map((content, i) => ({
     document_id: doc.id,
     content,
-    embedding: null,
+    embedding: embeddings[i] ?? null,
     metadata: { index: i },
   }));
 

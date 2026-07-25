@@ -78,6 +78,34 @@ export async function listMCPTools(userServers: string[] = []): Promise<MCPToolD
   return Array.from((await getMCPTools(userServers)).values());
 }
 
+type ConnectedSession = {
+  client: Client;
+  transport: StreamableHTTPClientTransport;
+  lastUsed: number;
+};
+
+const activeSessions = new Map<string, ConnectedSession>();
+
+async function getOrCreateSession(serverUrl: string): Promise<Client> {
+  const existing = activeSessions.get(serverUrl);
+  if (existing) {
+    existing.lastUsed = Date.now();
+    return existing.client;
+  }
+
+  const transport = new StreamableHTTPClientTransport(new URL(serverUrl));
+  await Promise.race([
+    transport.start(),
+    new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout connecting to MCP")), 5000))
+  ]);
+
+  const client = new Client({ name: "askit", version: "1.0.0" });
+  await client.connect(transport);
+
+  activeSessions.set(serverUrl, { client, transport, lastUsed: Date.now() });
+  return client;
+}
+
 /**
  * Call an MCP tool by name with the given arguments.
  */
@@ -87,17 +115,19 @@ export async function callMCPTool(
   args: Record<string, unknown>
 ): Promise<{ content: Array<{ type: string; text?: string }> }> {
   try {
-    const transport = new StreamableHTTPClientTransport(new URL(serverUrl));
-    await transport.start();
-    const client = new Client({ name: "askit", version: "1.0.0" });
-    await client.connect(transport);
-
+    const client = await getOrCreateSession(serverUrl);
     const result = await client.callTool({ name: toolName, arguments: args });
-    await client.close();
-
     return result as { content: Array<{ type: string; text?: string }> };
   } catch (err) {
-    console.error(`[MCP] Failed to call ${toolName} on ${serverUrl}:`, err);
-    throw err;
+    // If pooled call fails, clear cached session and retry once with fresh connection
+    activeSessions.delete(serverUrl);
+    try {
+      const freshClient = await getOrCreateSession(serverUrl);
+      const result = await freshClient.callTool({ name: toolName, arguments: args });
+      return result as { content: Array<{ type: string; text?: string }> };
+    } catch (retryErr) {
+      console.error(`[MCP] Failed to call ${toolName} on ${serverUrl}:`, retryErr);
+      throw retryErr;
+    }
   }
 }

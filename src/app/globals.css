@@ -1,23 +1,22 @@
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --neo-black: #0a0a0b;
-  --neo-surface: #0e0e10;
-  --neo-surface-raised: #131316;
-  --neo-surface-inset: #060608;
-  --neo-pink: #ec4899;
-  --neo-pink-dim: #be185d;
-  --neo-white: #fafafa;
+  --neo-black: #09090b;
+  --neo-surface: #121215;
+  --neo-surface-raised: #18181b;
+  --neo-surface-inset: #09090b;
+  --neo-pink: #e4e4e7;
+  --neo-pink-dim: #a1a1aa;
+  --neo-white: #f4f4f5;
   --neo-white-muted: #a1a1aa;
-  --neo-border: rgba(51, 65, 85, 0.4);
-  --neo-border-hover: rgba(71, 85, 105, 0.55);
-  --neo-shadow-dark: rgba(0, 0, 0, 0.8);
-  --neo-shadow-light: rgba(30, 41, 59, 0.22);
+  --neo-border: #27272a;
+  --neo-border-hover: #3f3f46;
+  --neo-shadow-dark: rgba(0, 0, 0, 0.5);
+  --neo-shadow-light: rgba(255, 255, 255, 0.03);
 }
 
 * {

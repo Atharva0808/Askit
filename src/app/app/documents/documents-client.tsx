@@ -104,8 +104,8 @@ export function DocumentsClient() {
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`rounded-2xl border border-white/[0.06] overflow-hidden shadow-2xl backdrop-blur-sm px-5 py-5 sm:py-6 text-center cursor-pointer transition-all duration-500 relative group ${
-          dragOver ? "bg-white/[0.08]" : "bg-white/[0.02] hover:bg-white/[0.04]"
+        className={`rounded-2xl border border-zinc-800 overflow-hidden shadow-xl backdrop-blur-sm px-5 py-5 sm:py-6 text-center cursor-pointer transition-all duration-300 relative group ${
+          dragOver ? "bg-zinc-800" : "bg-zinc-900/60 hover:bg-zinc-900"
         }`}
       >
         <input
@@ -118,37 +118,34 @@ export function DocumentsClient() {
         />
         
         <div className="relative z-10 flex flex-col items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-700 ${
-            uploading ? "bg-white/[0.08]" : "bg-white/[0.04] group-hover:scale-105 group-hover:bg-white/[0.08]"
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
+            uploading ? "bg-zinc-800" : "bg-zinc-800/60 group-hover:scale-105 group-hover:bg-zinc-800"
           }`}>
             {uploading ? (
-              <svg className="w-4 h-4 text-white/40 animate-spin" fill="none" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-zinc-400 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-10" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-60" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
             ) : (
-              <svg className="w-5 h-5 text-white/30 group-hover:text-white/60 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <svg className="w-5 h-5 text-zinc-400 group-hover:text-zinc-200 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
               </svg>
             )}
           </div>
           
           <div className="space-y-0.5">
-            <p className="text-[14px] font-medium text-neo-white/80 tracking-tight">
+            <p className="text-[14px] font-medium text-zinc-200 tracking-tight">
               {uploading ? "Analyzing document..." : "Drop a file or click to browse"}
             </p>
-            <p className="text-[10px] text-white/20 tracking-wide">
+            <p className="text-[11px] text-zinc-400 tracking-wide">
               PDF, TXT, Markdown, Coding files
             </p>
           </div>
         </div>
-        
-        {/* Subtle animated border glow on hover */}
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
       </div>
 
       {/* Integrated URL Section */}
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-1.5 flex gap-1.5 shadow-xl backdrop-blur-sm">
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-1.5 flex gap-1.5 shadow-xl backdrop-blur-sm">
         <div className="flex-1 relative">
           <input
             type="url"
@@ -156,7 +153,7 @@ export function DocumentsClient() {
             onChange={(e) => setUrlInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleUrlIngest(); }}
             placeholder="Paste link to ingest..."
-            className="w-full bg-transparent pl-4 pr-3 py-2 text-[13px] text-neo-white placeholder-white/20 outline-none transition-all"
+            className="w-full bg-transparent pl-4 pr-3 py-2 text-[13px] text-zinc-100 placeholder-zinc-500 outline-none transition-all"
             disabled={uploading}
           />
         </div>
@@ -164,7 +161,7 @@ export function DocumentsClient() {
           type="button"
           onClick={handleUrlIngest}
           disabled={uploading || !urlInput.trim()}
-          className="px-4 py-2 rounded-xl bg-white/[0.04] text-[12px] font-medium text-white/50 hover:text-white hover:bg-white/[0.08] disabled:opacity-20 disabled:cursor-not-allowed transition-all active:scale-[0.98] border border-white/[0.02]"
+          className="px-4 py-2 rounded-xl bg-zinc-800 text-[12px] font-medium text-zinc-200 hover:text-white hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-[0.98] border border-zinc-700/50"
         >
           {uploading ? "..." : "Ingest"}
         </button>

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { embedText } from "@/lib/rag/embed";
 
 const TOP_K = 5;
 const MAX_TERMS = 6;
@@ -29,22 +30,52 @@ export async function retrieveChunks(
 ): Promise<RetrievedChunk[]> {
   const supabase = await createClient();
 
+  let vectorResults: RetrievedChunk[] = [];
+  let keywordResults: RetrievedChunk[] = [];
+
+  // 1. Vector Search
+  try {
+    const queryEmbedding = await embedText(query);
+    if (queryEmbedding && queryEmbedding.length > 0) {
+      const { data: vectorChunks, error: rpcErr } = await supabase.rpc(
+        "match_chunks",
+        {
+          query_embedding: queryEmbedding,
+          match_threshold: 0.2,
+          match_count: 10,
+          user_id_filter: userId,
+        }
+      );
+
+      if (!rpcErr && vectorChunks?.length) {
+        vectorResults = vectorChunks.map((c: any) => ({
+          id: c.id,
+          content: c.content,
+          document_id: c.document_id,
+          metadata: (c.metadata as Record<string, unknown>) ?? {},
+        }));
+      }
+    }
+  } catch (e) {
+    console.warn("[RAG] Vector match_chunks query failed:", e);
+  }
+
+  // 2. Text Keyword Retrieval
   const terms = buildSearchTerms(query);
   const orFilter =
     terms.length > 0
       ? terms.map((t) => `content.ilike.%${t}%`).join(",")
       : `content.ilike.%${query}%`;
 
-  // Text-based retrieval (no embeddings). If FK join isn't configured, fallback below handles it.
-  const { data: chunks, error } = await supabase
+  const { data: textChunks } = await supabase
     .from("chunks")
     .select("id, content, document_id, metadata, documents!inner(user_id)")
     .eq("documents.user_id", userId)
     .or(orFilter)
-    .limit(TOP_K);
+    .limit(10);
 
-  if (chunks?.length) {
-    return chunks.map((c) => ({
+  if (textChunks?.length) {
+    keywordResults = textChunks.map((c) => ({
       id: c.id,
       content: c.content,
       document_id: c.document_id,
@@ -52,8 +83,35 @@ export async function retrieveChunks(
     }));
   }
 
-  // If we didn't match chunk content, try matching document names (e.g. "biodata", "resume_example1.pdf").
-  if (!error && terms.length > 0) {
+  // 3. Reciprocal Rank Fusion (RRF) Re-ranking
+  const RRF_K = 60;
+  const scores = new Map<string, { chunk: RetrievedChunk; score: number }>();
+
+  const processList = (list: RetrievedChunk[]) => {
+    list.forEach((chunk, rankIndex) => {
+      const rank = rankIndex + 1;
+      const rrfScore = 1 / (RRF_K + rank);
+      const existing = scores.get(chunk.id);
+      if (existing) {
+        existing.score += rrfScore;
+      } else {
+        scores.set(chunk.id, { chunk, score: rrfScore });
+      }
+    });
+  };
+
+  processList(vectorResults);
+  processList(keywordResults);
+
+  if (scores.size > 0) {
+    const sorted = Array.from(scores.values())
+      .sort((a, b) => b.score - a.score)
+      .map((item) => item.chunk);
+    return sorted.slice(0, TOP_K);
+  }
+
+  // 4. Document Title Match Fallback
+  if (terms.length > 0) {
     const docOr = terms.map((t) => `name.ilike.%${t}%`).join(",");
     const { data: docsByName } = await supabase
       .from("documents")
@@ -81,10 +139,6 @@ export async function retrieveChunks(
     }
   }
 
-  if (error) {
-    const fallback = await fallbackRetrieve(supabase, userId);
-    return fallback;
-  }
   return await fallbackRetrieve(supabase, userId);
 }
 

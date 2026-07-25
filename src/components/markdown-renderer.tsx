@@ -3,6 +3,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useState, type ReactNode } from "react";
+import type { ArtifactData } from "./artifact-panel";
 
 function CopyCodeButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -24,10 +25,16 @@ function CopyCodeButton({ text }: { text: string }) {
   );
 }
 
-export function MarkdownRenderer({ content }: { content: string }) {
+export function MarkdownRenderer({
+  content,
+  onOpenArtifact,
+}: {
+  content: string;
+  onOpenArtifact?: (artifact: ArtifactData) => void;
+}) {
   // Defensive: Strip leaked function tags from model outputs
   const cleanedContent = content.replace(/<function[\s\S]*?<\/function>/gi, "").trim();
-  
+
   if (!cleanedContent) return null;
 
   return (
@@ -43,13 +50,36 @@ export function MarkdownRenderer({ content }: { content: string }) {
             const text = String(children).replace(/\n$/, "");
 
             if (match) {
+              const lang = match[1].toLowerCase();
+              const isCanvasType = ["html", "svg", "jsx", "tsx", "js", "ts", "python", "css"].includes(lang);
+
               return (
-                <div className="code-block-wrap">
-                  <div className="code-block-header">
-                    <span className="code-block-lang">{match[1]}</span>
-                    <CopyCodeButton text={text} />
+                <div className="code-block-wrap my-3 rounded-xl overflow-hidden border border-zinc-800 bg-[#0c0c0e]">
+                  <div className="code-block-header flex items-center justify-between px-3 py-1.5 bg-zinc-900/60 border-b border-zinc-800">
+                    <span className="code-block-lang text-[11px] font-mono font-medium text-zinc-300 uppercase tracking-wider">
+                      {lang}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {isCanvasType && onOpenArtifact && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onOpenArtifact({
+                              title: `${lang.toUpperCase()} Artifact`,
+                              type: lang === "html" ? "html" : lang === "svg" ? "svg" : "code",
+                              content: text,
+                              language: lang,
+                            })
+                          }
+                          className="text-[11px] px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 hover:bg-zinc-700 transition-all font-medium flex items-center gap-1"
+                        >
+                          <span>⚡ Canvas</span>
+                        </button>
+                      )}
+                      <CopyCodeButton text={text} />
+                    </div>
                   </div>
-                  <pre className="code-block-pre">
+                  <pre className="code-block-pre p-3 overflow-x-auto text-xs font-mono leading-relaxed text-zinc-200">
                     <code
                       className={`code-block-code ${className || ""}`}
                       {...(rest as React.HTMLAttributes<HTMLElement>)}
@@ -63,7 +93,7 @@ export function MarkdownRenderer({ content }: { content: string }) {
 
             return (
               <code
-                className={className}
+                className={`px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-200 font-mono text-xs border border-zinc-700/50 ${className || ""}`}
                 {...(rest as React.HTMLAttributes<HTMLElement>)}
               >
                 {children}
@@ -76,6 +106,7 @@ export function MarkdownRenderer({ content }: { content: string }) {
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
+                className="text-zinc-200 underline underline-offset-4 hover:text-white transition-colors font-medium"
                 {...(props as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
               >
                 {children as ReactNode}

@@ -1,5 +1,7 @@
 import { Chat } from "@/components/chat";
 
+export const dynamic = "force-dynamic";
+
 type Props = { searchParams: Promise<{ chatId?: string }> };
 
 export default async function AppPage({ searchParams }: Props) {

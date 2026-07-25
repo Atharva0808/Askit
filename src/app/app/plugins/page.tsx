@@ -140,10 +140,7 @@ export default function PluginsPage() {
     <div className="relative z-10 max-w-4xl mx-auto px-4 py-6 sm:py-8 pt-20 sm:pt-24">
       <div className="mb-6 sm:mb-8">
         <div className="flex items-center gap-3 mb-1">
-          <h1
-            className="text-xl sm:text-2xl tracking-tight"
-            style={{ fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontWeight: 700, color: "var(--neo-white)" }}
-          >
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-100 font-sans">
             Plugins
           </h1>
           {connectedCount > 0 && (
@@ -152,7 +149,7 @@ export default function PluginsPage() {
             </span>
           )}
         </div>
-        <p className="text-white/40 text-xs sm:text-sm">Connect API keys to extend the AI assistant with external services.</p>
+        <p className="text-zinc-400 text-xs sm:text-sm mt-1">Connect API keys to extend the AI assistant with external services.</p>
       </div>
 
       {/* Success Toast */}

@@ -140,10 +140,12 @@ GUIDELINES:
     }
   }
 
-  // Groq Vision works best with isolated context (no tool history)
-  const messagesToSend = hasImage
-    ? [coreMessages[coreMessages.length - 1]]
-    : coreMessages;
+  // Maintain sliding context window (keep last 20 messages to prevent token limits)
+  const MAX_HISTORY_MESSAGES = 20;
+  const messagesToSend =
+    coreMessages.length > MAX_HISTORY_MESSAGES
+      ? coreMessages.slice(coreMessages.length - MAX_HISTORY_MESSAGES)
+      : coreMessages;
 
   // Proactive RAG injection: ensures "RAG works" even if the model doesn't tool-call.
   if (!hasImage) {
@@ -170,7 +172,7 @@ GUIDELINES:
   if (chatId) {
     const lastUser = rawMessages[rawMessages.length - 1];
     if (lastUser?.role === "user") {
-      const text =
+      const rawText =
         typeof lastUser.content === "string"
           ? lastUser.content
           : Array.isArray(lastUser.content)
@@ -179,10 +181,11 @@ GUIDELINES:
                 .map((p) => (p as { text?: string }).text ?? "")
                 .join("")
             : "";
+      const savedContent = rawText || (hasImage ? "[Attached Image]" : "[Voice Message]");
       await supabase.from("messages").insert({
         chat_id: chatId,
         role: "user",
-        content: text || (hasImage ? "[image]" : "[voice message]"),
+        content: savedContent,
       });
       await supabase
         .from("chats")
@@ -192,10 +195,9 @@ GUIDELINES:
     }
   }
 
-  // Select free model: Gemini supports vision beautifully, while Groq handles multi-turn RAG/tools aggressively fast natively.
-  // Both are 100% free!
+  // Select free model: Gemini 1.5 Flash supports vision, Groq handles text & tools.
   const activeModel = hasImage
-    ? (google("gemini-2.5-flash") as any)
+    ? (google("gemini-1.5-flash") as any)
     : (groq("llama-3.1-8b-instant") as any);
 
   try {
@@ -307,8 +309,15 @@ GUIDELINES:
                     const regex = /class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]+?)<\/a>[\s\S]*?class="result__snippet"[^>]*>([\s\S]+?)<\/a>/g;
                     let m;
                     while ((m = regex.exec(html)) !== null && results.length < 8) {
-                      const link = m[1];
-                      // Strip tags from title and snippet
+                      let link = m[1];
+                      if (link.includes("uddg=")) {
+                        try {
+                          const match = /uddg=([^&]+)/.exec(link);
+                          if (match) link = decodeURIComponent(match[1]);
+                        } catch { /* ignore */ }
+                      } else if (link.startsWith("//")) {
+                        link = `https:${link}`;
+                      }
                       const title = m[2].replace(/<[^>]+>/g, "").trim();
                       const snippet = m[3].replace(/<[^>]+>/g, "").trim();
                       results.push(`Title: ${title}\nSource: ${link}\nSummary: ${snippet}`);
@@ -378,9 +387,14 @@ GUIDELINES:
                     };
                   }
                   const html = await res.text();
-                  const text = html
+                  const cleanHtml = html
                     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
                     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+                    .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, "")
+                    .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, "")
+                    .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, "")
+                    .replace(/<svg[^>]*>[\s\S]*?<\/svg>/gi, "");
+                  const text = cleanHtml
                     .replace(/<[^>]+>/g, " ")
                     .replace(/\s+/g, " ")
                     .trim();
@@ -425,11 +439,12 @@ GUIDELINES:
                 
                 if (matchedPlugin?.key) {
                    const finalArgs = { ...args } as Record<string, any>;
-                   // Inject into common parameter names used by MCP tools
-                   const authFields = ["token", "apiKey", "api_key", "password", "access_token"];
-                   authFields.forEach(field => {
-                      if (!finalArgs[field]) finalArgs[field] = matchedPlugin.key;
-                   });
+                   const authFields = ["apiKey", "token", "api_key", "access_token", "password"];
+                   const existingKey = authFields.find((f) => finalArgs[f]);
+                   if (!existingKey) {
+                     // Inject into the first matching missing auth field
+                     finalArgs["apiKey"] = matchedPlugin.key;
+                   }
                    const res = await callMCPTool(meta.serverUrl, meta.toolName, finalArgs);
                    const text = (res.content || [])
                      .map((c) => c.text)

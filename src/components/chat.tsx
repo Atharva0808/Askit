@@ -5,12 +5,89 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { MarkdownRenderer } from "./markdown-renderer";
+import { ArtifactPanel, type ArtifactData } from "./artifact-panel";
 
 import type { Message } from "ai";
 
 type UIMessage = Message & {
-  toolInvocations?: Array<{ toolCallId: string; toolName: string; state: string }>;
+  toolInvocations?: Array<{ toolCallId: string; toolName: string; state: string; args?: any; result?: any }>;
 };
+
+/* --- Interactive Tool Execution Card --- */
+function ToolInvocationCard({ tool }: { tool: any }) {
+  const [expanded, setExpanded] = useState(false);
+  const isDone = tool.state === "result" || tool.state === "output" || tool.result !== undefined;
+
+  const getToolMeta = (name: string) => {
+    switch (name) {
+      case "web_search":
+        return { icon: "🔍", label: "Web Search", color: "text-blue-400" };
+      case "search_documents":
+        return { icon: "📄", label: "Document RAG", color: "text-amber-400" };
+      case "web_fetch":
+        return { icon: "🌐", label: "Page Fetch", color: "text-purple-400" };
+      case "mcp_call":
+        return { icon: "⚙️", label: "MCP Tool", color: "text-zinc-300" };
+      case "get_datetime":
+        return { icon: "🕒", label: "Time Lookup", color: "text-zinc-300" };
+      default:
+        return { icon: "🛠️", label: name, color: "text-zinc-400" };
+    }
+  };
+
+  const meta = getToolMeta(tool.toolName);
+
+  return (
+    <div className="my-1.5 rounded-xl border border-zinc-800 bg-zinc-900/60 overflow-hidden text-xs transition-all shadow-sm">
+      <div
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-zinc-800/50 transition-colors"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-sm">{meta.icon}</span>
+          <span className={`font-medium ${meta.color}`}>{meta.label}</span>
+          <span className="text-zinc-500 truncate max-w-[220px] font-mono text-[11px]">
+            {tool.args ? JSON.stringify(tool.args).slice(0, 45) : ""}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {isDone ? (
+            <span className="flex items-center gap-1 text-emerald-400 text-[11px] font-medium bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+              ✓ Done
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-zinc-300 text-[11px] font-medium bg-zinc-800 px-2 py-0.5 rounded-md border border-zinc-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-pulse" /> Running...
+            </span>
+          )}
+          <span className="text-zinc-500 text-[10px]">{expanded ? "▲" : "▼"}</span>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="p-3 border-t border-white/[0.06] bg-black/40 font-mono text-[11px] space-y-2 text-white/80 neo-fade-in">
+          {tool.args && (
+            <div>
+              <span className="text-white/40 block mb-0.5 font-sans text-[10px] uppercase">Parameters:</span>
+              <pre className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.04] text-white/90 overflow-x-auto whitespace-pre-wrap">
+                {JSON.stringify(tool.args, null, 2)}
+              </pre>
+            </div>
+          )}
+          {tool.result && (
+            <div>
+              <span className="text-white/40 block mb-0.5 font-sans text-[10px] uppercase">Output:</span>
+              <pre className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.04] text-white/90 overflow-x-auto max-h-48 whitespace-pre-wrap">
+                {typeof tool.result === "string" ? tool.result : JSON.stringify(tool.result, null, 2)}
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* --- SVG Icons --- */
 function IconImage({ className = "w-5 h-5" }: { className?: string }) {
@@ -152,6 +229,9 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [dismissedError, setDismissedError] = useState(false);
   const [lastApiError, setLastApiError] = useState<string | null>(null);
+
+  const [activeArtifact, setActiveArtifact] = useState<ArtifactData | null>(null);
+  const [isArtifactOpen, setIsArtifactOpen] = useState(false);
 
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState("");
@@ -368,21 +448,28 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
       setIsRecording(false);
       isRecordingInternalRef.current = false;
       try { recognition?.stop?.(); } catch { /* noop */ }
+      
+      let transcribedText = "";
       try {
-        const text = await stopAndTranscribe();
-        const finalText = text || voiceTranscriptRef.current.trim() || input.trim();
-        if (finalText) forceSubmit(finalText);
+        transcribedText = await stopAndTranscribe();
       } catch {
-        const fallbackText = voiceTranscriptRef.current.trim() || input.trim();
-        if (fallbackText) forceSubmit(fallbackText);
+        /* fallback to native recognition transcript */
+      }
+
+      const finalText = (transcribedText || voiceTranscriptRef.current || input || "").trim();
+      if (finalText) {
+        forceSubmit(finalText);
       }
     } else {
       setIsRecording(true);
       isRecordingInternalRef.current = true;
       voiceTranscriptRef.current = "";
       setInput("");
-      try { await startRecording(); } catch { /* ignore */ }
-      try { recognition?.start?.(); } catch { /* noop */ }
+      if (recognition) {
+        try { recognition.start(); } catch { /* noop */ }
+      } else {
+        try { await startRecording(); } catch { /* ignore */ }
+      }
     }
   }
 
@@ -576,8 +663,8 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
         const newId = createData?.id;
         if (newId) {
           chatIdRef.current = newId;
-          router.push(`/app?chatId=${newId}`, { scroll: false });
-          // No refresh here to avoid state reset
+          setChatId(newId);
+          window.history.replaceState(null, "", `/app?chatId=${newId}`);
         }
       } catch (err) {
         console.error("Failed to create chat session:", err);
@@ -625,7 +712,8 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
   const showError = error && !dismissedError;
 
   return (
-    <div className="flex flex-col h-full bg-neo-black relative overflow-hidden">
+    <div className="flex w-full h-full bg-neo-black relative overflow-hidden">
+      <div className="flex-1 flex flex-col h-full min-w-0 relative">
       {/* Scrollable Chat Area */}
       <div ref={scrollAreaRef} className="flex-1 overflow-y-auto w-full p-3 sm:p-6 pt-20 sm:pt-24 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div className="max-w-3xl mx-auto w-full flex flex-col min-h-full pb-[140px]">
@@ -639,13 +727,10 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
                 <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-6 flex items-center justify-center">
                   <AskitIcon className="w-14 h-14 sm:w-16 sm:h-16" />
                 </div>
-                <h1
-                  className="text-2xl sm:text-4xl md:text-5xl mb-3 sm:mb-4 tracking-tight"
-                  style={{ fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontWeight: 700, color: "var(--neo-white)" }}
-                >
+                <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 tracking-tight text-zinc-100 font-sans">
                   How can I help you today?
                 </h1>
-                <p className="text-neo-white-muted text-xs sm:text-sm mb-8 sm:mb-10 max-w-lg mx-auto leading-relaxed px-2">
+                <p className="text-zinc-400 text-xs sm:text-sm mb-8 sm:mb-10 max-w-lg mx-auto leading-relaxed px-2">
                   Your personal assistant with retrieval augmented generation,
                   multimodal vision, voice input and powerful tools.
                 </p>
@@ -655,9 +740,9 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
                       key={label}
                       type="button"
                       onClick={() => handleSuggestion(label)}
-                      className="group px-3 sm:px-4 py-3 sm:py-3.5 rounded-xl text-[12px] sm:text-[13px] text-left active:scale-[0.97] touch-manipulation transition-all duration-200 bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.06] hover:border-white/[0.12] text-neo-white-muted hover:text-neo-white"
+                      className="group px-3 sm:px-4 py-3 sm:py-3.5 rounded-xl text-[12px] sm:text-[13px] text-left active:scale-[0.97] touch-manipulation transition-all duration-200 bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-zinc-100 shadow-sm"
                     >
-                      <span className="mr-2 inline-flex align-middle opacity-50">{icon}</span>
+                      <span className="mr-2 inline-flex align-middle text-zinc-400">{icon}</span>
                       {label}
                     </button>
                   ))}
@@ -673,7 +758,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
 
                   {m.role === "user" ? (
                     <div className="group/user relative">
-                      <div className="px-3.5 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-br from-white/[0.10] to-white/[0.06] text-neo-white rounded-2xl rounded-br-md text-[13px] sm:text-[14px] break-words backdrop-blur-sm border border-white/[0.06]">
+                      <div className="px-3.5 sm:px-4 py-2.5 sm:py-3 bg-zinc-800/90 text-zinc-100 rounded-2xl rounded-br-md text-[13px] sm:text-[14px] break-words shadow-sm border border-zinc-700/60">
                         {attachmentsByMessageId[m.id]?.imageUrl && (
                           <div className="mb-3 relative w-32 h-32 sm:w-48 sm:h-48 rounded-xl overflow-hidden border border-white/10">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -751,19 +836,21 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
                     <div className="flex flex-col w-full text-[13px] sm:text-[14px] text-neo-white">
                       {/* Tool Invocations */}
                       {m.toolInvocations && m.toolInvocations.length > 0 && (
-                        <div className="flex flex-col gap-1.5 mb-3">
-                          {m.toolInvocations.map(tool => (
-                            <div key={tool.toolCallId} className="flex items-center gap-2 px-3 py-2 bg-white/[0.02] border border-white/[0.04] rounded-lg text-xs text-neo-white-muted">
-                              <IconSettings className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                              <span>Using <strong className="text-neo-white/80">{tool.toolName}</strong></span>
-                              {tool.state === "result" && <IconCheck className="w-3 h-3 text-emerald-400 ml-auto" />}
-                            </div>
+                        <div className="flex flex-col gap-1 mb-3">
+                          {m.toolInvocations.map((tool) => (
+                            <ToolInvocationCard key={tool.toolCallId} tool={tool} />
                           ))}
                         </div>
                       )}
 
                       <div className="prose prose-invert prose-p:leading-relaxed max-w-none text-[13px] sm:text-[14px] leading-relaxed">
-                        <MarkdownRenderer content={m.content} />
+                        <MarkdownRenderer
+                          content={m.content}
+                          onOpenArtifact={(art) => {
+                            setActiveArtifact(art);
+                            setIsArtifactOpen(true);
+                          }}
+                        />
                       </div>
 
                       <div className="flex items-center gap-1 mt-3 opacity-0 hover:opacity-100 transition-opacity duration-200" style={{ opacity: idx === lastAssistantIdx ? 1 : undefined }}>
@@ -874,7 +961,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
             </div>
           )}
 
-          <div className="flex items-end gap-1.5 sm:gap-2 rounded-2xl border border-white/[0.08] bg-[#111113] p-1.5 sm:p-2 shadow-2xl" data-recording={isRecording}>
+          <div className="flex items-end gap-1.5 sm:gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/90 p-1.5 sm:p-2 shadow-xl backdrop-blur-md" data-recording={isRecording}>
             <input
               ref={imageInputRef}
               type="file"
@@ -887,7 +974,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
             <button
               type="button"
               onClick={() => imageInputRef.current?.click()}
-              className="shrink-0 p-2 rounded-xl text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-all duration-150 touch-manipulation"
+              className="shrink-0 p-2 rounded-xl text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-all duration-150 touch-manipulation"
               title="Attach image or file"
             >
               <IconImage className="w-5 h-5" />
@@ -905,7 +992,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
                 }
               }}
               placeholder="Message Askit..."
-              className="flex-1 bg-transparent text-sm outline-none text-neo-white resize-none max-h-32 py-2 placeholder:text-white/25 leading-relaxed scrollbar-hide [&::-webkit-scrollbar]:hidden min-w-0"
+              className="flex-1 bg-transparent text-sm outline-none text-zinc-100 resize-none max-h-32 py-2 placeholder:text-zinc-500 leading-relaxed scrollbar-hide [&::-webkit-scrollbar]:hidden min-w-0"
               rows={1}
               disabled={isLoading}
             />
@@ -957,6 +1044,12 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
           </p>
         </form>
       </div>
+      </div>
+      <ArtifactPanel
+        artifact={activeArtifact}
+        isOpen={isArtifactOpen}
+        onClose={() => setIsArtifactOpen(false)}
+      />
     </div>
   );
 }

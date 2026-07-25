@@ -280,10 +280,7 @@ export function AppSidebar({
             <svg className="w-8 h-8 shrink-0" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
               <g transform="translate(32, 32)"><rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(72)" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(144)" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(216)" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(288)" /></g>
             </svg>
-            <span
-              className="text-lg tracking-tight"
-              style={{ fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontWeight: 700, color: "var(--neo-pink)" }}
-            >
+            <span className="text-lg font-bold tracking-tight text-zinc-100 font-sans">
               Askit
             </span>
           </Link>

@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { DocumentsClient } from "./documents-client";
 
+export const dynamic = "force-dynamic";
+
 export default async function DocumentsPage() {
   const supabase = await createClient();
   const {
