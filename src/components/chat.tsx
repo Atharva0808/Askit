@@ -21,31 +21,31 @@ function ToolInvocationCard({ tool }: { tool: any }) {
   const getToolMeta = (name: string) => {
     switch (name) {
       case "web_search":
-        return { icon: "🔍", label: "Web Search", color: "text-blue-400" };
+        return { label: "Web Search", color: "text-zinc-200" };
       case "search_documents":
-        return { icon: "📄", label: "Document RAG", color: "text-amber-400" };
+        return { label: "Document RAG", color: "text-zinc-200" };
       case "web_fetch":
-        return { icon: "🌐", label: "Page Fetch", color: "text-purple-400" };
+        return { label: "Page Fetch", color: "text-zinc-200" };
       case "mcp_call":
-        return { icon: "⚙️", label: "MCP Tool", color: "text-zinc-300" };
+        return { label: "MCP Tool", color: "text-zinc-300" };
       case "get_datetime":
-        return { icon: "🕒", label: "Time Lookup", color: "text-zinc-300" };
+        return { label: "Time Lookup", color: "text-zinc-300" };
       default:
-        return { icon: "🛠️", label: name, color: "text-zinc-400" };
+        return { label: name, color: "text-zinc-400" };
     }
   };
 
   const meta = getToolMeta(tool.toolName);
 
   return (
-    <div className="my-1.5 rounded-xl border border-zinc-800 bg-zinc-900/60 overflow-hidden text-xs transition-all shadow-sm">
+    <div className="my-1.5 rounded-xl border border-zinc-800 bg-zinc-900/80 overflow-hidden text-xs transition-all shadow-sm">
       <div
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-zinc-800/50 transition-colors"
+        className="flex items-center justify-between px-3.5 py-2.5 cursor-pointer hover:bg-zinc-800/40 transition-colors"
       >
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-sm">{meta.icon}</span>
-          <span className={`font-medium ${meta.color}`}>{meta.label}</span>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 shrink-0" />
+          <span className={`font-medium text-xs ${meta.color}`}>{meta.label}</span>
           <span className="text-zinc-500 truncate max-w-[220px] font-mono text-[11px]">
             {tool.args ? JSON.stringify(tool.args).slice(0, 45) : ""}
           </span>
@@ -54,7 +54,7 @@ function ToolInvocationCard({ tool }: { tool: any }) {
         <div className="flex items-center gap-2 shrink-0">
           {isDone ? (
             <span className="flex items-center gap-1 text-emerald-400 text-[11px] font-medium bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-              ✓ Done
+              Done
             </span>
           ) : (
             <span className="flex items-center gap-1 text-zinc-300 text-[11px] font-medium bg-zinc-800 px-2 py-0.5 rounded-md border border-zinc-700">
@@ -69,7 +69,7 @@ function ToolInvocationCard({ tool }: { tool: any }) {
         <div className="p-3 border-t border-white/[0.06] bg-black/40 font-mono text-[11px] space-y-2 text-white/80 neo-fade-in">
           {tool.args && (
             <div>
-              <span className="text-white/40 block mb-0.5 font-sans text-[10px] uppercase">Parameters:</span>
+              <span className="text-white/40 block mb-0.5 font-sans text-[10px] uppercase tracking-wider">Parameters:</span>
               <pre className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.04] text-white/90 overflow-x-auto whitespace-pre-wrap">
                 {JSON.stringify(tool.args, null, 2)}
               </pre>
@@ -77,7 +77,7 @@ function ToolInvocationCard({ tool }: { tool: any }) {
           )}
           {tool.result && (
             <div>
-              <span className="text-white/40 block mb-0.5 font-sans text-[10px] uppercase">Output:</span>
+              <span className="text-white/40 block mb-0.5 font-sans text-[10px] uppercase tracking-wider">Output:</span>
               <pre className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.04] text-white/90 overflow-x-auto max-h-48 whitespace-pre-wrap">
                 {typeof tool.result === "string" ? tool.result : JSON.stringify(tool.result, null, 2)}
               </pre>
@@ -89,48 +89,33 @@ function ToolInvocationCard({ tool }: { tool: any }) {
   );
 }
 
-/* --- Dynamic Live Agent Reasoning & Wave Indicator (Option 4) --- */
+/* --- Executive Minimalist Loading Indicator --- */
 function ThinkingIndicator() {
   const [statusIdx, setStatusIdx] = useState(0);
 
   const statuses = [
-    { icon: "🧠", text: "Analyzing query & intent..." },
-    { icon: "🔍", text: "Retrieving web & document data..." },
-    { icon: "⚡", text: "Processing & evaluating facts..." },
-    { icon: "✍️", text: "Synthesizing response..." },
+    "Thinking...",
+    "Retrieving context...",
+    "Processing data...",
+    "Formatting response...",
   ];
 
   useEffect(() => {
     const timer = setInterval(() => {
       setStatusIdx((prev) => (prev + 1) % statuses.length);
-    }, 2200);
+    }, 2000);
     return () => clearInterval(timer);
   }, [statuses.length]);
 
-  const current = statuses[statusIdx];
-
   return (
     <div className="flex w-full justify-start neo-fade-in my-2">
-      <div className="inline-flex items-center gap-3 px-3.5 py-2 rounded-xl bg-zinc-900/90 border border-zinc-800/80 shadow-lg backdrop-blur-md text-xs font-medium text-zinc-300 transition-all duration-300">
-        {/* Animated Fluid Equalizer Bar */}
-        <div className="flex items-end gap-1 h-3.5 w-3.5 justify-center py-0.5 shrink-0">
-          <span className="w-0.5 bg-emerald-400 rounded-full animate-[pulse_0.8s_ease-in-out_infinite_100ms] h-full" />
-          <span className="w-0.5 bg-emerald-400/80 rounded-full animate-[pulse_0.8s_ease-in-out_infinite_300ms] h-2.5" />
-          <span className="w-0.5 bg-emerald-400/60 rounded-full animate-[pulse_0.8s_ease-in-out_infinite_500ms] h-3.5" />
-        </div>
-
-        {/* Live Status Indicator */}
-        <div className="flex items-center gap-1.5 min-w-[210px] transition-all duration-300">
-          <span className="text-xs">{current.icon}</span>
-          <span className="text-zinc-300 text-xs font-normal tracking-wide animate-pulse">
-            {current.text}
-          </span>
-        </div>
-
-        {/* Pulsing Status Dot */}
-        <span className="relative flex h-2 w-2 ml-1 shrink-0">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+      <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-zinc-800 text-xs font-sans text-zinc-300 shadow-sm backdrop-blur-sm">
+        {/* Minimal Spinner Ring */}
+        <span className="w-3 h-3 border-2 border-zinc-600 border-t-zinc-200 rounded-full animate-spin shrink-0" />
+        
+        {/* Status Text */}
+        <span className="text-zinc-300 text-xs font-normal tracking-wide">
+          {statuses[statusIdx]}
         </span>
       </div>
     </div>
