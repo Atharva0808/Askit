@@ -269,24 +269,29 @@ export function AppSidebar({
         onClick={() => setIsOpen(false)}
       />
 
-      <aside className="fixed lg:relative z-50 lg:z-auto w-[280px] lg:w-[260px] shrink-0 border-r border-white/[0.04] flex flex-col bg-[#0a0a0c] overflow-hidden h-full shadow-2xl lg:shadow-none">
+      <aside className="fixed lg:relative z-50 lg:z-auto w-[280px] lg:w-[260px] shrink-0 border-r border-zinc-800/80 flex flex-col bg-zinc-950 overflow-hidden h-full shadow-xl lg:shadow-none font-sans">
         {/* ── Brand & Toggle ── */}
-        <div className="px-5 pt-6 pb-3 flex items-center justify-between">
+        <div className="px-4 pt-5 pb-3 flex items-center justify-between">
           <Link
             href="/app"
             className="flex items-center gap-2.5 group"
             onClick={() => window.dispatchEvent(new CustomEvent("reset-chat"))}
           >
-            <svg className="w-8 h-8 shrink-0" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <g transform="translate(32, 32)"><rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(72)" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(144)" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(216)" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(288)" /></g>
+            <svg className="w-6 h-6 shrink-0 text-pink-500" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g transform="translate(32, 32)"><rect x="-4" y="-26" width="12" height="28" rx="6" fill="currentColor" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="currentColor" transform="rotate(72)" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="currentColor" transform="rotate(144)" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="currentColor" transform="rotate(216)" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="currentColor" transform="rotate(288)" /></g>
             </svg>
-            <span className="text-lg font-bold tracking-tight text-zinc-100 font-sans">
-              Askit
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-base font-bold tracking-tight text-zinc-100 font-sans">
+                Askit
+              </span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800">
+                2.0
+              </span>
+            </div>
           </Link>
           <button
             onClick={() => setIsOpen(false)}
-          className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-colors duration-75"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 transition-colors duration-150"
             title="Close sidebar"
           >
             <IconPanelLeftClose />
@@ -297,7 +302,7 @@ export function AppSidebar({
         <div className="px-3 pb-2">
           <Link
             href="/app"
-            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-white/[0.06] to-white/[0.03] hover:from-white/[0.10] hover:to-white/[0.06] border border-white/[0.06] hover:border-white/[0.10] text-neo-white text-sm font-medium transition-colors duration-75 w-full group touch-manipulation"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-100 text-xs font-semibold shadow-xs transition-all duration-150 w-full group touch-manipulation"
             onClick={() => window.dispatchEvent(new CustomEvent("reset-chat"))}
           >
             <IconPlus />
@@ -308,7 +313,7 @@ export function AppSidebar({
         {/* ── Search ── */}
         <div className="px-3 pb-2">
           <div className="relative">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/20">
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500">
               <IconSearch />
             </span>
             <input
@@ -316,8 +321,11 @@ export function AppSidebar({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search chats..."
-              className="w-full pl-8 pr-3 py-2 text-xs text-neo-white placeholder-white/20 bg-white/[0.02] border border-white/[0.04] outline-none focus:border-white/[0.10] transition-colors rounded-lg"
+              className="w-full pl-8 pr-8 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 bg-zinc-900/90 border border-zinc-800/80 outline-none focus:border-zinc-700 transition-colors rounded-lg font-sans"
             />
+            <kbd className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-mono text-zinc-500 bg-zinc-800/80 border border-zinc-700/50 px-1 py-0.2 rounded">
+              ⌘K
+            </kbd>
           </div>
         </div>
 
@@ -325,10 +333,10 @@ export function AppSidebar({
         <nav className="px-2 flex-1 overflow-hidden min-h-0 flex flex-col gap-2 py-2">
           {/* Chats */}
           <div className="flex flex-col min-h-0 flex-[6]">
-            <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/20 mb-1.5">Recent</p>
+            <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 mb-1.5">Recent</p>
             <div className="space-y-0.5 overflow-y-auto flex-1 pr-1">
               {filteredChats.length === 0 && !searchQuery && (
-                <p className="text-[11px] text-white/15 px-3 py-3 text-center">No chats yet</p>
+                <p className="text-[11px] text-zinc-600 px-3 py-3 text-center">No chats yet</p>
               )}
               {filteredChats.map((chat) => {
                 const isRenaming = renamingChatId === chat.id;
@@ -337,12 +345,13 @@ export function AppSidebar({
                   <Link
                     key={chat.id}
                     href={`/app?chatId=${chat.id}`}
-                    className={`flex items-center group gap-2 px-3 py-2 rounded-lg text-[13px] transition-colors duration-75 touch-manipulation ${
+                    className={`flex items-center group gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-150 touch-manipulation ${
                       isActive
-                        ? "bg-white/[0.08] text-white border border-white/[0.06]"
-                        : "text-white/50 hover:text-white/80 hover:bg-white/[0.03] border border-transparent"
+                        ? "bg-zinc-900 text-zinc-100 font-medium border border-zinc-800 shadow-xs"
+                        : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 border border-transparent"
                     }`}
                   >
+                    {isActive && <span className="w-1 h-3.5 bg-zinc-200 rounded-full shrink-0" />}
                     <IconMessage />
                     {isRenaming ? (
                       <input
@@ -354,7 +363,7 @@ export function AppSidebar({
                           if (e.key === "Enter") { e.preventDefault(); finishRenameChat(); }
                           else if (e.key === "Escape") setRenamingChatId(null);
                         }}
-                        className="bg-transparent border-none outline-none flex-1 min-w-0 text-xs text-neo-white"
+                        className="bg-transparent border-none outline-none flex-1 min-w-0 text-xs text-zinc-100"
                         onClick={(e) => e.preventDefault()}
                       />
                     ) : (
@@ -366,7 +375,7 @@ export function AppSidebar({
                       <button
                         type="button"
                         onClick={(e) => startRenameChat(e, chat)}
-                        className="p-1 rounded hover:bg-white/[0.08] text-white/30 hover:text-white transition-colors"
+                        className="p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-colors"
                         aria-label="Rename"
                       >
                         <IconPencil />
@@ -374,7 +383,7 @@ export function AppSidebar({
                       <button
                         type="button"
                         onClick={(e) => deleteChat(e, chat.id)}
-                        className="p-1 rounded hover:bg-white/[0.08] text-white/30 hover:text-red-400 transition-colors"
+                        className="p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-red-400 transition-colors"
                         aria-label="Delete"
                       >
                         <IconTrash />
@@ -384,20 +393,20 @@ export function AppSidebar({
                 );
               })}
               {searchQuery && filteredChats.length === 0 && (
-                <p className="text-[11px] text-white/20 px-3 py-2">No chats found</p>
+                <p className="text-[11px] text-zinc-600 px-3 py-2">No chats found</p>
               )}
             </div>
           </div>
 
           {/* Documents (Knowledge) */}
           {documents.length > 0 && (
-            <div className="flex flex-col min-h-0 flex-[4] border-t border-white/[0.04] pt-3">
-              <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/20 mb-1.5">Knowledge</p>
+            <div className="flex flex-col min-h-0 flex-[4] border-t border-zinc-800/80 pt-3">
+              <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 mb-1.5">Knowledge</p>
               <div className="space-y-0.5 overflow-y-auto flex-1 pr-1">
                 {filteredDocs.map((doc) => {
                   const isRenaming = renamingDocId === doc.id;
                   return (
-                    <div key={doc.id} className="flex items-center group gap-2 px-3 py-1.5 rounded-lg text-[12px] text-white/35 hover:text-white/60 hover:bg-white/[0.02] transition-all duration-150 cursor-default">
+                    <div key={doc.id} className="flex items-center group gap-2 px-2.5 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 transition-all duration-150 cursor-default">
                       <IconDoc />
                       {isRenaming ? (
                         <input
@@ -409,16 +418,16 @@ export function AppSidebar({
                             if (e.key === "Enter") { e.preventDefault(); finishRenameDoc(); }
                             else if (e.key === "Escape") setRenamingDocId(null);
                           }}
-                          className="bg-transparent border-none outline-none flex-1 min-w-0 text-xs text-neo-white"
+                          className="bg-transparent border-none outline-none flex-1 min-w-0 text-xs text-zinc-100"
                         />
                       ) : (
                         <span className="truncate flex-1 min-w-0">{doc.name}</span>
                       )}
                       <div className="shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-                        <button type="button" onClick={() => startRenameDoc(doc)} className="p-0.5 rounded hover:bg-white/[0.08] text-white/25 hover:text-white transition-colors" aria-label={`Rename ${doc.name}`}>
+                        <button type="button" onClick={() => startRenameDoc(doc)} className="p-0.5 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-colors" aria-label={`Rename ${doc.name}`}>
                           <IconPencil />
                         </button>
-                        <button type="button" onClick={(e) => deleteDocument(e, doc.id)} className="p-0.5 rounded hover:bg-white/[0.08] text-white/25 hover:text-red-400 transition-colors" aria-label={`Delete ${doc.name}`}>
+                        <button type="button" onClick={(e) => deleteDocument(e, doc.id)} className="p-0.5 rounded hover:bg-zinc-800 text-zinc-400 hover:text-red-400 transition-colors" aria-label={`Delete ${doc.name}`}>
                           <IconTrash />
                         </button>
                       </div>
@@ -431,21 +440,21 @@ export function AppSidebar({
         </nav>
 
         {/* ── User Panel ── */}
-        <div className="p-3 border-t border-white/[0.04]">
-          <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04] flex items-center gap-2.5">
+        <div className="p-3 border-t border-zinc-800/80">
+          <div className="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-center gap-2.5">
             {user.user_metadata?.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.user_metadata.avatar_url} alt="" className="w-8 h-8 rounded-full shrink-0" />
+              <img src={user.user_metadata.avatar_url} alt="" className="w-8 h-8 rounded-full shrink-0 object-cover" />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-600/20 flex items-center justify-center text-pink-400 text-sm font-semibold shrink-0">
+              <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-200 text-xs font-semibold shrink-0">
                 {(user.email ?? "?")[0].toUpperCase()}
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-white/80 truncate">
+              <p className="text-xs font-semibold text-zinc-100 truncate">
                 {user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "User"}
               </p>
-              <p className="text-[10px] text-white/25 truncate">
+              <p className="text-[10px] text-zinc-500 truncate">
                 {user.email}
               </p>
             </div>

@@ -39,27 +39,33 @@ export function AppHeader({ user }: { user: User }) {
 
   return (
     <div className="absolute top-3 sm:top-4 left-1/2 -translate-x-1/2 z-30 w-full max-w-4xl px-3 sm:px-4">
-      <header className="h-10 sm:h-12 w-full rounded-xl sm:rounded-2xl border border-white/[0.06] flex items-center justify-between px-3 sm:px-6 bg-neo-black/80 backdrop-blur-xl shadow-2xl">
-        <h1 className="text-xs sm:text-sm font-medium text-white/60 truncate">
-          {user.user_metadata?.full_name
-            ? `Hi, ${user.user_metadata.full_name.split(" ")[0]}`
-            : "Askit"}
-        </h1>
-        <div className="flex items-center gap-0.5 sm:gap-1">
+      <header className="h-11 sm:h-12 w-full rounded-xl border border-zinc-800/80 flex items-center justify-between px-3.5 sm:px-5 bg-zinc-950/90 backdrop-blur-md shadow-md">
+        <div className="flex items-center gap-2.5 truncate">
+          <span className="text-xs sm:text-sm font-semibold text-zinc-100 font-sans tracking-tight truncate">
+            {user.user_metadata?.full_name
+              ? `Hi, ${user.user_metadata.full_name.split(" ")[0]}`
+              : "Askit"}
+          </span>
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-[10px] font-mono text-zinc-400 shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 shrink-0" />
+            Llama 3.3
+          </span>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
           {navItems.map(({ href, label, Icon }) => (
             <Link
               key={href}
               href={href}
               prefetch={true}
-              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-medium transition-all duration-75 active:scale-95 touch-manipulation ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 active:scale-95 touch-manipulation ${
                 pathname === href
-                  ? "bg-white/[0.08] text-white shadow-sm"
-                  : "text-white/40 hover:text-white/80 hover:bg-white/[0.04] active:bg-white/[0.08]"
+                  ? "bg-zinc-800 text-zinc-100 border border-zinc-700/60 shadow-xs"
+                  : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 border border-transparent"
               }`}
               title={label}
             >
               <Icon />
-              <span className="hidden xs:inline sm:inline">{label}</span>
+              <span className="hidden sm:inline">{label}</span>
             </Link>
           ))}
         </div>

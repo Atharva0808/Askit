@@ -990,7 +990,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
             </div>
           )}
 
-          <div className="flex items-end gap-1.5 sm:gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/90 p-1.5 sm:p-2 shadow-xl backdrop-blur-md" data-recording={isRecording}>
+          <div className="flex items-end gap-1.5 sm:gap-2 rounded-xl border border-zinc-800 bg-zinc-950/90 p-2 sm:p-2.5 shadow-lg backdrop-blur-md focus-within:border-zinc-700 transition-all duration-150" data-recording={isRecording}>
             <input
               ref={imageInputRef}
               type="file"
