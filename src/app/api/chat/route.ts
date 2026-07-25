@@ -1,5 +1,6 @@
 import { google } from "@ai-sdk/google";
 import { groq } from "@ai-sdk/groq";
+import { openai } from "@ai-sdk/openai";
 import { convertToCoreMessages, createDataStreamResponse, streamText, tool } from "ai";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -64,6 +65,8 @@ CAPABILITIES:
 - web_fetch: Fetch and read content from any public URL/website
 - web_search: Search the web for current information. Use for recent events, facts, or when the user asks for "search" or "find" or "latest".
 - youtube_api: Search YouTube for videos, channels, and playlists using YouTube Data API.
+- github_api: Search repos, list user repos, and read GitHub issues using connected GitHub token.
+- spotify_api: Search tracks, artists, and playlists using connected Spotify token.
 - get_datetime: Get the current date and time
 - mcp_call: Call tools from custom MCP servers (GitHub, Slack, SQL, etc.)
 
@@ -72,7 +75,9 @@ GUIDELINES:
 - Use web_fetch when the user asks you to read, summarize, or analyze a web page.
 - Use web_search when the user asks for current information, recent news, or to search the web for a topic.
 - Use youtube_api when the user asks to search YouTube videos, channels, or playlists.
-- Note: An API key grants access to public YouTube Data API endpoints (video/channel search, metadata). Personal private account data (such as user's subscribed channels or watch history) requires user OAuth2 browser login, not just an API key.
+- Use github_api when the user asks to list their GitHub repos, search repositories, or check repository issues.
+- Use spotify_api when the user asks to search Spotify songs, artists, or playlists.
+- Note: API keys grant access to REST & Data endpoints. Personal account features requiring user browser authorization (e.g. YouTube subscriptions or private user settings) require OAuth2 user login.
 - Use get_datetime when the user needs the current date/time or for any time-sensitive query.
 - Use mcp_call whenever the user asks for actions involving external services like GitHub, Slack, or databases, provided an MCP tool is available.
 - You can understand images: the user may send an image; describe or answer based on it when relevant.
@@ -198,9 +203,10 @@ GUIDELINES:
     }
   }
 
-  // Select free model: Gemini 1.5 Flash supports vision, Groq handles text & tools.
+  // Select free model: Gemini 1.5 Flash supports vision (with OpenAI gpt-4o-mini fallback), Groq handles text & tools.
+  const hasGoogleKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   const activeModel = hasImage
-    ? (google("gemini-1.5-flash") as any)
+    ? (hasGoogleKey ? (google("gemini-1.5-flash") as any) : (openai("gpt-4o-mini") as any))
     : (groq("llama-3.1-8b-instant") as any);
 
   try {
@@ -410,6 +416,93 @@ GUIDELINES:
                         : "Failed to fetch URL",
                     content: null,
                   };
+                }
+              },
+            }),
+
+            github_api: tool({
+              description:
+                "Interact with GitHub API. Search repositories, list user repos, or read issue lists. Powered by GitHub Personal Access Token configured in Plugins.",
+              parameters: z.object({
+                action: z.enum(["list_user_repos", "search_repos", "get_issues"]).describe("GitHub action"),
+                query: z.string().optional().describe("Search query or repo name (owner/repo for issues)"),
+              }),
+              execute: async ({ action, query }) => {
+                const ghPlugin = userPlugins.find((p) => p.id.toLowerCase().includes("github"));
+                const token = ghPlugin?.key || process.env.GITHUB_TOKEN;
+                if (!token) {
+                  return { error: "No GitHub Token found. Add your GitHub Personal Access Token in Plugins." };
+                }
+                const headers = {
+                  Authorization: `Bearer ${token}`,
+                  Accept: "application/vnd.github+json",
+                  "User-Agent": "Askit-AI/1.0",
+                };
+
+                try {
+                  let endpoint = "https://api.github.com/user/repos?sort=updated&per_page=10";
+                  if (action === "search_repos" && query) {
+                    endpoint = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&per_page=8`;
+                  } else if (action === "get_issues" && query) {
+                    endpoint = `https://api.github.com/repos/${query}/issues?per_page=10`;
+                  }
+
+                  const res = await fetch(endpoint, { headers });
+                  if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    return { error: err.message || `GitHub API error (${res.status})` };
+                  }
+                  const data = await res.json();
+                  const list = Array.isArray(data) ? data : data.items || [];
+                  const results = list.slice(0, 10).map((r: any) => ({
+                    name: r.name || r.title,
+                    fullName: r.full_name,
+                    description: r.description || r.body,
+                    url: r.html_url,
+                    stars: r.stargazers_count,
+                    language: r.language,
+                  }));
+                  return { action, results };
+                } catch (err) {
+                  return { error: err instanceof Error ? err.message : "GitHub request failed" };
+                }
+              },
+            }),
+
+            spotify_api: tool({
+              description:
+                "Search Spotify tracks, artists, and playlists using Spotify Web API. Powered by Spotify API Key/Token configured in Plugins.",
+              parameters: z.object({
+                query: z.string().describe("Search query (song name, artist, or album)"),
+                type: z.enum(["track", "artist", "playlist"]).optional().default("track").describe("Search type"),
+              }),
+              execute: async ({ query, type }) => {
+                const spotifyPlugin = userPlugins.find((p) => p.id.toLowerCase().includes("spotify"));
+                const token = spotifyPlugin?.key || process.env.SPOTIFY_API_KEY;
+                if (!token) {
+                  return { error: "No Spotify Access Token found. Add your token in Plugins." };
+                }
+
+                try {
+                  const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${type || "track"}&limit=5`;
+                  const res = await fetch(url, {
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    return { error: err.error?.message || `Spotify API error (${res.status})` };
+                  }
+                  const data = await res.json();
+                  const key = type === "artist" ? "artists" : type === "playlist" ? "playlists" : "tracks";
+                  const items = (data[key]?.items || []).map((item: any) => ({
+                    name: item.name,
+                    artist: item.artists ? item.artists.map((a: any) => a.name).join(", ") : item.owner?.display_name,
+                    url: item.external_urls?.spotify,
+                    popularity: item.popularity,
+                  }));
+                  return { results: items };
+                } catch (err) {
+                  return { error: err instanceof Error ? err.message : "Spotify request failed" };
                 }
               },
             }),

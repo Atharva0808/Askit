@@ -89,6 +89,15 @@ export async function POST(req: Request) {
           const buf = new Uint8Array(await file.arrayBuffer());
           const result = await extractText(buf, { mergePages: true });
           content = result?.text ?? "";
+          if (content.trim().length < 20) {
+            return NextResponse.json(
+              {
+                error:
+                  "Uploaded PDF appears to be a scanned image without selectable text. Please upload a text-based PDF or convert it with OCR.",
+              },
+              { status: 400 }
+            );
+          }
         } catch (e) {
           return NextResponse.json(
             { error: e instanceof Error ? e.message : "Failed to parse PDF" },
@@ -106,8 +115,10 @@ export async function POST(req: Request) {
     }
   }
   if (!content.trim()) {
-    // Instead of failing, provide a default string so ingest succeeds
-    content = "The uploaded file or URL returned no text content. It might be blocked or empty.";
+    return NextResponse.json(
+      { error: "The uploaded file or URL contained no readable text." },
+      { status: 400 }
+    );
   }
 
   const safeContent = stripInvalidUnicode(content);
