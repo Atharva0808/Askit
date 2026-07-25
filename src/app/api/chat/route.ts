@@ -1,6 +1,6 @@
-import { google } from "@ai-sdk/google";
-import { groq } from "@ai-sdk/groq";
-import { openai } from "@ai-sdk/openai";
+import { google, createGoogleGenerativeAI } from "@ai-sdk/google";
+import { groq, createGroq } from "@ai-sdk/groq";
+import { openai, createOpenAI } from "@ai-sdk/openai";
 import { convertToCoreMessages, createDataStreamResponse, streamText, tool } from "ai";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -202,18 +202,25 @@ GUIDELINES:
     }
   }
 
-  // Select model: Prefer OpenAI gpt-4o-mini or Gemini 1.5 Flash for rock-solid tool calling, fallback to Groq Llama 3.3 70B.
-  const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
-  const hasGoogleKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-  const hasGroqKey = !!process.env.GROQ_API_KEY;
+  // Support custom plugin keys from browser storage alongside environment variables
+  const userOpenAIKey = userPlugins.find((p) => p.id === "openai")?.key || process.env.OPENAI_API_KEY;
+  const userGroqKey = userPlugins.find((p) => p.id === "groq")?.key || process.env.GROQ_API_KEY;
+  const userGoogleKey = userPlugins.find((p) => p.id === "google" || p.id === "gcp")?.key || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
+  const openaiProvider = userOpenAIKey ? createOpenAI({ apiKey: userOpenAIKey }) : openai;
+  const groqProvider = userGroqKey ? createGroq({ apiKey: userGroqKey }) : groq;
+  const googleProvider = userGoogleKey ? createGoogleGenerativeAI({ apiKey: userGoogleKey }) : google;
+
+  // Model Selection Priority:
+  // For Vision: Prefer Google Gemini 1.5 Flash -> fallback to OpenAI gpt-4o-mini
+  // For Text & Tools: Prefer Groq Llama 3.3 70B -> fallback to Google Gemini 1.5 Flash -> fallback to OpenAI gpt-4o-mini
   const activeModel = hasImage
-    ? (hasGoogleKey ? (google("gemini-1.5-flash") as any) : (openai("gpt-4o-mini") as any))
-    : (hasOpenAIKey
-        ? (openai("gpt-4o-mini") as any)
-        : hasGoogleKey
-          ? (google("gemini-1.5-flash") as any)
-          : (groq("llama-3.3-70b-versatile") as any));
+    ? (userGoogleKey ? (googleProvider("gemini-1.5-flash") as any) : (openaiProvider("gpt-4o-mini") as any))
+    : (userGroqKey
+        ? (groqProvider("llama-3.3-70b-versatile") as any)
+        : userGoogleKey
+          ? (googleProvider("gemini-1.5-flash") as any)
+          : (openaiProvider("gpt-4o-mini") as any));
 
   try {
     const mcpToolDefs = await listMCPTools(userMcpServers);
