@@ -63,6 +63,7 @@ CAPABILITIES:
 - search_documents: Search the user's uploaded documents for relevant context (RAG)
 - web_fetch: Fetch and read content from any public URL/website
 - web_search: Search the web for current information. Use for recent events, facts, or when the user asks for "search" or "find" or "latest".
+- youtube_api: Search YouTube for videos, channels, and playlists using YouTube Data API.
 - get_datetime: Get the current date and time
 - mcp_call: Call tools from custom MCP servers (GitHub, Slack, SQL, etc.)
 
@@ -70,6 +71,8 @@ GUIDELINES:
 - Use search_documents when the user asks about their uploaded documents or when you need to ground your answer in their data.
 - Use web_fetch when the user asks you to read, summarize, or analyze a web page.
 - Use web_search when the user asks for current information, recent news, or to search the web for a topic.
+- Use youtube_api when the user asks to search YouTube videos, channels, or playlists.
+- Note: An API key grants access to public YouTube Data API endpoints (video/channel search, metadata). Personal private account data (such as user's subscribed channels or watch history) requires user OAuth2 browser login, not just an API key.
 - Use get_datetime when the user needs the current date/time or for any time-sensitive query.
 - Use mcp_call whenever the user asks for actions involving external services like GitHub, Slack, or databases, provided an MCP tool is available.
 - You can understand images: the user may send an image; describe or answer based on it when relevant.
@@ -407,6 +410,43 @@ GUIDELINES:
                         : "Failed to fetch URL",
                     content: null,
                   };
+                }
+              },
+            }),
+
+            youtube_api: tool({
+              description:
+                "Search YouTube for videos, channels, and playlists using YouTube Data API. Works with YouTube/Google API Key configured in Plugins or system environment.",
+              parameters: z.object({
+                query: z.string().describe("Search query or name"),
+                type: z.enum(["video", "channel", "playlist"]).optional().default("video").describe("Search type"),
+              }),
+              execute: async ({ query, type }) => {
+                const ytPlugin = userPlugins.find((p) => p.id.toLowerCase().includes("youtube") || p.id.toLowerCase().includes("google"));
+                const apiKey = ytPlugin?.key || process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.YOUTUBE_API_KEY;
+                if (!apiKey) {
+                  return { error: "No YouTube API Key found. Add your key in the Plugins tab." };
+                }
+
+                try {
+                  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=${type || "video"}&maxResults=5&key=${apiKey}`;
+                  const res = await fetch(url);
+                  if (!res.ok) {
+                    const errJson = await res.json().catch(() => ({}));
+                    return { error: errJson.error?.message || `YouTube API error (${res.status})` };
+                  }
+                  const data = await res.json();
+                  const results = (data.items || []).map((item: any) => ({
+                    title: item.snippet?.title,
+                    channelTitle: item.snippet?.channelTitle,
+                    description: item.snippet?.description,
+                    id: item.id?.videoId || item.id?.channelId || item.id?.playlistId,
+                    url: item.id?.videoId ? `https://www.youtube.com/watch?v=${item.id.videoId}` : undefined,
+                    publishedAt: item.snippet?.publishedAt,
+                  }));
+                  return { results };
+                } catch (err) {
+                  return { error: err instanceof Error ? err.message : "YouTube request failed" };
                 }
               },
             }),
