@@ -212,18 +212,18 @@ GUIDELINES:
   const googleProvider = userGoogleKey ? createGoogleGenerativeAI({ apiKey: userGoogleKey }) : google;
 
   // Model Selection Priority:
-  // For Vision (hasImage): Prefer Google gemini-1.5-pro (stable multimodal) -> fallback to OpenAI gpt-4o-mini
-  // For Text & Tools: Prefer Groq Llama 3.3 70B -> fallback to Google gemini-1.5-pro -> fallback to OpenAI gpt-4o-mini
+  // For Vision (hasImage): Prefer OpenAI gpt-4o-mini -> fallback to Google gemini-2.0-flash
+  // For Text & Tools: Prefer Groq Llama 3.3 70B -> fallback to Google gemini-2.0-flash -> fallback to OpenAI gpt-4o-mini
   const activeModel = hasImage
-    ? (userGoogleKey
-        ? (googleProvider("gemini-1.5-pro") as any)
-        : userOpenAIKey
-          ? (openaiProvider("gpt-4o-mini") as any)
-          : (googleProvider("gemini-1.5-pro") as any))
+    ? (userOpenAIKey
+        ? (openaiProvider("gpt-4o-mini") as any)
+        : userGoogleKey
+          ? (googleProvider("gemini-2.0-flash") as any)
+          : (openaiProvider("gpt-4o-mini") as any))
     : (userGroqKey
         ? (groqProvider("llama-3.3-70b-versatile") as any)
         : userGoogleKey
-          ? (googleProvider("gemini-1.5-pro") as any)
+          ? (googleProvider("gemini-2.0-flash") as any)
           : (openaiProvider("gpt-4o-mini") as any));
 
   try {
@@ -698,18 +698,21 @@ GUIDELINES:
         message = "Missing/invalid OpenAI API key (OPENAI_API_KEY).";
       } else if (
         error.message.includes("GROQ_API_KEY") ||
-        error.message.toLowerCase().includes("groq") && error.message.toLowerCase().includes("api key")
+        (error.message.toLowerCase().includes("groq") && error.message.toLowerCase().includes("api key"))
       ) {
         message = "Missing/invalid Groq API key (GROQ_API_KEY).";
-      } else if (error.message.includes("Incorrect API key provided") || error.message.includes("invalid_api_key")) {
-        message = "The configured OpenAI API Key is invalid or expired. Please update your API Key in Plugins or check your environment variables.";
       } else if (
+        error.message.includes("RESOURCE_EXHAUSTED") ||
+        error.message.includes("quota") ||
         error.message.includes("rate limit") ||
         error.message.includes("429") ||
-        error.message.includes("Failed after 3 attempt") ||
         error.message.includes("insufficient_quota")
       ) {
-        message = "Rate limit or quota reached. Please check your OpenAI/Groq billing or try again later.";
+        message = "API Quota Limit Reached: The configured Google or OpenAI API key has exceeded its daily free tier quota. Please add a valid API key under Plugins to continue image analysis.";
+      } else if (error.message.includes("Incorrect API key provided") || error.message.includes("invalid_api_key")) {
+        message = "Invalid API Key: The configured OpenAI API Key is invalid or expired. Please update your API Key under Plugins.";
+      } else if (error.message.includes("is not found for API version") || error.message.includes("model_not_found")) {
+        message = "Model Notice: The requested vision model is not supported by your current API key. Please update your API Key under Plugins.";
       } else if (error.message.includes("ECONNREFUSED") || error.message.includes("fetch failed")) {
         message = "Failed to connect to an external server or MCP host. Please check your connections.";
       } else if (error.message.includes("model")) {
