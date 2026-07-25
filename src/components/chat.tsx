@@ -110,11 +110,8 @@ function ThinkingIndicator() {
   return (
     <div className="flex w-full justify-start neo-fade-in my-2">
       <div className="inline-flex items-center gap-3 px-3.5 py-2 rounded-full bg-zinc-900/90 border border-zinc-800/90 shadow-md backdrop-blur-md text-xs font-sans text-zinc-200 transition-all duration-300">
-        {/* Askit Rotating Sparkle Icon with Ambient Glow */}
-        <div className="relative flex items-center justify-center w-4 h-4 shrink-0">
-          <div className="absolute inset-0 rounded-full bg-pink-500/40 blur-sm animate-pulse" />
-          <AskitIcon className="w-4 h-4 animate-[spin_4s_linear_infinite] relative z-10" />
-        </div>
+        {/* Askit Rotating Sparkle Icon */}
+        <AskitIcon className="w-4 h-4 animate-[spin_4s_linear_infinite] shrink-0" />
 
         {/* Dynamic Status Text */}
         <span className="text-zinc-200 text-xs font-medium tracking-wide animate-pulse">
