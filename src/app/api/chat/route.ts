@@ -212,17 +212,19 @@ GUIDELINES:
   const googleProvider = userGoogleKey ? createGoogleGenerativeAI({ apiKey: userGoogleKey }) : google;
 
   // Model Selection Priority:
-  // For Vision (hasImage): Prefer OpenAI gpt-4o-mini -> fallback to Google gemini-2.0-flash-exp
-  // For Text & Tools: Prefer Groq Llama 3.3 70B -> fallback to OpenAI gpt-4o-mini -> fallback to Google gemini-2.0-flash-exp
+  // For Vision (hasImage): Prefer Google gemini-1.5-pro (stable multimodal) -> fallback to OpenAI gpt-4o-mini
+  // For Text & Tools: Prefer Groq Llama 3.3 70B -> fallback to Google gemini-1.5-pro -> fallback to OpenAI gpt-4o-mini
   const activeModel = hasImage
-    ? (userOpenAIKey ? (openaiProvider("gpt-4o-mini") as any) : userGoogleKey ? (googleProvider("gemini-2.0-flash-exp") as any) : (openaiProvider("gpt-4o-mini") as any))
-    : (userGroqKey
-        ? (groqProvider("llama-3.3-70b-versatile") as any)
+    ? (userGoogleKey
+        ? (googleProvider("gemini-1.5-pro") as any)
         : userOpenAIKey
           ? (openaiProvider("gpt-4o-mini") as any)
-          : userGoogleKey
-            ? (googleProvider("gemini-2.0-flash-exp") as any)
-            : (openaiProvider("gpt-4o-mini") as any));
+          : (googleProvider("gemini-1.5-pro") as any))
+    : (userGroqKey
+        ? (groqProvider("llama-3.3-70b-versatile") as any)
+        : userGoogleKey
+          ? (googleProvider("gemini-1.5-pro") as any)
+          : (openaiProvider("gpt-4o-mini") as any));
 
   try {
     const mcpToolDefs = await listMCPTools(userMcpServers);
@@ -699,6 +701,8 @@ GUIDELINES:
         error.message.toLowerCase().includes("groq") && error.message.toLowerCase().includes("api key")
       ) {
         message = "Missing/invalid Groq API key (GROQ_API_KEY).";
+      } else if (error.message.includes("Incorrect API key provided") || error.message.includes("invalid_api_key")) {
+        message = "The configured OpenAI API Key is invalid or expired. Please update your API Key in Plugins or check your environment variables.";
       } else if (
         error.message.includes("rate limit") ||
         error.message.includes("429") ||
