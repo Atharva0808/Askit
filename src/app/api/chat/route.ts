@@ -71,12 +71,14 @@ CAPABILITIES:
 - mcp_call: Call tools from custom MCP servers (GitHub, Slack, SQL, etc.)
 
 GUIDELINES:
+- STRICT TOOL ROUTING:
+  * ONLY use youtube_api when the user EXPLICITLY asks to search YouTube, find YouTube videos, watch clips, or search channels.
+  * ONLY use spotify_api when the user EXPLICITLY asks for Spotify, songs, tracks, or music playlists.
+  * ONLY use github_api when the user EXPLICITLY asks for GitHub, repos, or code issues.
+  * For general factual, historical, or entity queries (e.g., "hanoi hannah", "who was X", "quantum computing"), answer directly using your knowledge or use web_search if current live info is needed.
 - Use search_documents when the user asks about their uploaded documents or when you need to ground your answer in their data.
 - Use web_fetch when the user asks you to read, summarize, or analyze a web page.
 - Use web_search when the user asks for current information, recent news, or to search the web for a topic.
-- Use youtube_api when the user asks to search YouTube videos, channels, or playlists.
-- Use github_api when the user asks to list their GitHub repos, search repositories, or check repository issues.
-- Use spotify_api when the user asks to search Spotify songs, artists, or playlists.
 - Note: API keys grant access to REST & Data endpoints. Personal account features requiring user browser authorization (e.g. YouTube subscriptions or private user settings) require OAuth2 user login.
 - Use get_datetime when the user needs the current date/time or for any time-sensitive query.
 - Use mcp_call whenever the user asks for actions involving external services like GitHub, Slack, or databases, provided an MCP tool is available.
@@ -463,7 +465,7 @@ GUIDELINES:
 
             github_api: tool({
               description:
-                "Interact with GitHub API. Search repositories, list user repos, or read issue lists. Powered by GitHub Personal Access Token configured in Plugins.",
+                "ONLY call this tool when the user EXPLICITLY asks to search GitHub, list repositories, or check code issues on GitHub. DO NOT use for general queries.",
               parameters: z.object({
                 action: z.string().describe("GitHub action: list_user_repos, search_repos, or get_issues"),
                 query: z.string().describe("Search query or repo name (owner/repo for issues)"),
@@ -512,7 +514,7 @@ GUIDELINES:
 
             spotify_api: tool({
               description:
-                "Search Spotify tracks, artists, and playlists using Spotify Web API. Powered by Spotify API Key/Token configured in Plugins.",
+                "ONLY call this tool when the user EXPLICITLY asks to search Spotify, find songs, play music tracks, or search Spotify playlists. DO NOT use for general queries.",
               parameters: z.object({
                 query: z.string().describe("Search query (song name, artist, or album)"),
                 type: z.string().describe("Search type: track, artist, or playlist"),
@@ -550,7 +552,7 @@ GUIDELINES:
 
             youtube_api: tool({
               description:
-                "Search YouTube for videos, channels, and playlists using YouTube Data API. Works with YouTube/Google API Key configured in Plugins or system environment.",
+                "ONLY call this tool when the user EXPLICITLY asks to search YouTube, find YouTube videos, watch clips, or search YouTube channels. DO NOT use for general queries or historical/factual topics.",
               parameters: z.object({
                 query: z.string().describe("Search query or name"),
                 type: z.string().describe("Search type: video, channel, or playlist"),
