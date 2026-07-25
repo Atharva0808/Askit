@@ -438,7 +438,20 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaStreamRef.current = stream;
     audioChunksRef.current = [];
-    const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+    
+    let recorder: MediaRecorder;
+    try {
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : MediaRecorder.isTypeSupported("audio/mp4")
+        ? "audio/mp4"
+        : "";
+      recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+    } catch {
+      recorder = new MediaRecorder(stream);
+    }
     mediaRecorderRef.current = recorder;
     recorder.ondataavailable = (e) => {
       if (e.data && e.data.size > 0) audioChunksRef.current.push(e.data);
@@ -463,7 +476,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
     mediaRecorderRef.current = null;
     mediaStreamRef.current = null;
 
-    const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+    const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || "audio/webm" });
     audioChunksRef.current = [];
     if (blob.size < 1000) return "";
 
@@ -485,8 +498,8 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
       let transcribedText = "";
       try {
         transcribedText = await stopAndTranscribe();
-      } catch {
-        /* fallback to native recognition transcript */
+      } catch (err) {
+        console.warn("Whisper transcription fallback:", err);
       }
 
       const finalText = (transcribedText || voiceTranscriptRef.current || input || "").trim();
@@ -498,10 +511,15 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
       isRecordingInternalRef.current = true;
       voiceTranscriptRef.current = "";
       setInput("");
+
+      try {
+        await startRecording();
+      } catch (err) {
+        console.warn("MediaRecorder start error:", err);
+      }
+
       if (recognition) {
         try { recognition.start(); } catch { /* noop */ }
-      } else {
-        try { await startRecording(); } catch { /* ignore */ }
       }
     }
   }

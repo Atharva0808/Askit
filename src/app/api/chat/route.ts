@@ -215,11 +215,11 @@ GUIDELINES:
   // For Vision: Prefer Google Gemini 1.5 Flash -> fallback to OpenAI gpt-4o-mini
   // For Text & Tools: Prefer Groq Llama 3.3 70B -> fallback to Google Gemini 1.5 Flash -> fallback to OpenAI gpt-4o-mini
   const activeModel = hasImage
-    ? (userGoogleKey ? (googleProvider("gemini-1.5-flash") as any) : (openaiProvider("gpt-4o-mini") as any))
+    ? (userGoogleKey ? (googleProvider("gemini-1.5-flash-latest") as any) : (openaiProvider("gpt-4o-mini") as any))
     : (userGroqKey
         ? (groqProvider("llama-3.3-70b-versatile") as any)
         : userGoogleKey
-          ? (googleProvider("gemini-1.5-flash") as any)
+          ? (googleProvider("gemini-1.5-flash-latest") as any)
           : (openaiProvider("gpt-4o-mini") as any));
 
   try {
