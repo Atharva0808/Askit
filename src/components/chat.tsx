@@ -895,12 +895,18 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
                       <div className="prose prose-invert prose-p:leading-relaxed max-w-none text-[13px] sm:text-[14px] leading-relaxed">
                         <MarkdownRenderer
                           content={
-                            typeof m.content === "string"
-                              ? m.content
-                                  .replace(/<(web_search|search_documents|youtube_api|spotify_api|github_api|function[\w_]*)[^>]*>[\s\S]*?<\/\1>/gi, "")
-                                  .replace(/<(web_search|search_documents|youtube_api|spotify_api|github_api|function[\w_]*)[^>]*>[\s\S]*/gi, "")
-                                  .trim()
-                              : m.content
+                            (() => {
+                              const raw = typeof m.content === "string" ? m.content : "";
+                              const cleaned = raw
+                                .replace(/<(web_search|search_documents|youtube_api|spotify_api|github_api|function[\w_]*)[^>]*>[\s\S]*?<\/\1>/gi, "")
+                                .replace(/<(web_search|search_documents|youtube_api|spotify_api|github_api|function[\w_]*)[^>]*>[\s\S]*/gi, "")
+                                .trim();
+                              if (cleaned) return cleaned;
+                              if (m.toolInvocations && m.toolInvocations.length > 0) {
+                                return "Search & tool processing completed.";
+                              }
+                              return "I couldn't find a direct response for this query. Please try rephrasing or check your connected plugins.";
+                            })()
                           }
                           onOpenArtifact={(art) => {
                             setActiveArtifact(art);

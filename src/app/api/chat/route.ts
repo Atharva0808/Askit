@@ -294,12 +294,13 @@ GUIDELINES:
               }),
               execute: async ({ query }) => {
                 const chunks = await retrieveChunks(user.id, query);
-                return {
-                  results: chunks.slice(0, 10).map((c) => ({
-                    content: c.content.slice(0, 4000), // Truncate per chunk
-                    id: c.id,
-                  })),
-                };
+                if (chunks.length === 0) {
+                  return `No matching text chunks found in document storage for: ${query}`;
+                }
+                return chunks
+                  .slice(0, 8)
+                  .map((c, i) => `[Document Snippet ${i + 1}]\n${c.content.slice(0, 2000)}`)
+                  .join("\n\n");
               },
             }),
 
@@ -402,16 +403,9 @@ GUIDELINES:
                     } catch { /* fallback */ }
                   }
 
-                  return {
-                    query,
-                    results: resultsText || "Search completed. No direct web snippets available for this query.",
-                    source: resultsText ? "Web Search Data" : "No results"
-                  };
+                  return resultsText || `Web search completed for "${query}". No direct search snippets available.`;
                 } catch (err) {
-                  return {
-                    error: err instanceof Error ? err.message : "Web search failed",
-                    results: "",
-                  };
+                  return `Web search error for "${query}": ${err instanceof Error ? err.message : "Search failed"}`;
                 }
               },
             }),
