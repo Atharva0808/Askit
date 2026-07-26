@@ -902,10 +902,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
                                 .replace(/<(web_search|search_documents|youtube_api|spotify_api|github_api|function[\w_]*)[^>]*>[\s\S]*/gi, "")
                                 .trim();
                               if (cleaned) return cleaned;
-                              if (m.toolInvocations && m.toolInvocations.length > 0) {
-                                return "Search & tool processing completed.";
-                              }
-                              return "I couldn't find a direct response for this query. Please try rephrasing or check your connected plugins.";
+                              return "";
                             })()
                           }
                           onOpenArtifact={(art) => {

@@ -85,6 +85,7 @@ GUIDELINES:
 - You can understand images: the user may send an image; describe or answer based on it when relevant.
 - You can handle voice input: the user may speak to you; respond naturally.
 - Format responses in markdown for readability (use headings, lists, code blocks, bold, etc).
+- MANDATORY FINAL ANSWER: After invoking any tool (like web_search or search_documents), you MUST synthesize the results and write a thorough, helpful, detailed natural language response for the user. Never stop after tool execution without answering.
 - CRITICAL: Never write tool execution tags (such as XML tags or JSON function strings like <web_search>) into your response text. Perform all tool calls strictly through the system's native function calling interface.`;
 
   // Build core messages, stripping inline base64 image markdown so it doesn't
@@ -640,23 +641,20 @@ GUIDELINES:
               parameters: z.object({}),
               execute: async () => {
                 const now = new Date();
-                return {
-                  iso: now.toISOString(),
-                  date: now.toLocaleDateString("en-US", {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  }),
-                  time: now.toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                    hour12: true,
-                  }),
-                  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                  unix: Math.floor(now.getTime() / 1000),
-                };
+                const date = now.toLocaleDateString("en-US", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                });
+                const time = now.toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                  hour12: true,
+                });
+                const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                return `Current date: ${date}\nCurrent time: ${time}\nTimezone: ${tz}\nISO: ${now.toISOString()}`;
               },
             }),
           },
