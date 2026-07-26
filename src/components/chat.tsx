@@ -902,7 +902,8 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
                                 .replace(/<(web_search|search_documents|youtube_api|spotify_api|github_api|function[\w_]*)[^>]*>[\s\S]*/gi, "")
                                 .trim();
                               if (cleaned) return cleaned;
-                              return "";
+                              if (isLoading) return "";
+                              return "The response could not be generated. Please click the regenerate button below to try again.";
                             })()
                           }
                           onOpenArtifact={(art) => {
@@ -931,7 +932,7 @@ export function Chat({ initialChatId }: { initialChatId: string | null }) {
               </div>
             ))}
 
-            {isLoading && messages.length > 0 && messages[messages.length - 1]?.role === "user" && (
+            {isLoading && (messages[messages.length - 1]?.role === "user" || !messages[messages.length - 1]?.content) && (
               <ThinkingIndicator />
             )}
 
