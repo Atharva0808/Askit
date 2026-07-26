@@ -7,14 +7,9 @@ import { useSearchParams } from "next/navigation";
 
 function AskitIcon({ className = "w-6 h-6" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <g transform="translate(32, 32)">
-        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" />
-        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(72)" />
-        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(144)" />
-        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(216)" />
-        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(288)" />
-      </g>
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2L14.2 9.8L22 12L14.2 14.2L12 22L9.8 14.2L2 12L9.8 9.8L12 2Z" fill="currentColor" className="text-zinc-100" />
+      <circle cx="12" cy="12" r="2.5" className="fill-zinc-950" />
     </svg>
   );
 }
@@ -72,7 +67,7 @@ function SignupForm() {
         <div className="relative z-10">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 font-playfair italic font-bold text-neo-pink text-2xl"
+            className="inline-flex items-center gap-2 font-logo font-bold text-zinc-100 text-2xl"
           >
             <AskitIcon className="w-6 h-6" />
             Askit

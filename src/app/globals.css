@@ -29,6 +29,11 @@ body {
   font-family: "Inter", system-ui, -apple-system, sans-serif;
 }
 
+.font-logo {
+  font-family: var(--font-space-grotesk), var(--font-outfit), "Plus Jakarta Sans", system-ui, sans-serif;
+  letter-spacing: -0.03em;
+}
+
 /* ─────────────────────────────────────────────────
    NEOMORPHISM DESIGN SYSTEM
    Premium dark neumorphic — zero glow, all shadow

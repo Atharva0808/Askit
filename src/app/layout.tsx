@@ -15,13 +15,27 @@ export const metadata: Metadata = {
 
 import { PWARegistration } from "@/components/pwa-registration";
 
+import { Space_Grotesk, Outfit } from "next/font/google";
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
+  weight: ["500", "600", "700"],
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  weight: ["500", "600", "700"],
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={`${spaceGrotesk.variable} ${outfit.variable}`} suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#0a0a0a" />
@@ -37,7 +51,7 @@ export default function RootLayout({
           }
         `}} />
       </head>
-      <body className="min-h-screen antialiased bg-neo-black text-neo-white" suppressHydrationWarning>
+      <body className="min-h-screen antialiased bg-neo-black text-neo-white font-sans" suppressHydrationWarning>
         <PWARegistration />
         {children}
       </body>

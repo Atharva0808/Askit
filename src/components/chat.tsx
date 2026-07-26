@@ -109,12 +109,12 @@ function ThinkingIndicator() {
 
   return (
     <div className="flex w-full justify-start neo-fade-in my-2">
-      <div className="inline-flex items-center gap-3 px-3.5 py-2 rounded-full bg-zinc-900/90 border border-zinc-800/90 shadow-md backdrop-blur-md text-xs font-sans text-zinc-200 transition-all duration-300">
-        {/* Askit Rotating Sparkle Icon */}
-        <AskitIcon className="w-4 h-4 animate-[spin_4s_linear_infinite] shrink-0" />
-
-        {/* Dynamic Status Text */}
-        <span className="text-zinc-200 text-xs font-medium tracking-wide animate-pulse">
+      <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-zinc-900/90 border border-zinc-800/80 shadow-xs text-xs font-sans text-zinc-300 backdrop-blur-md">
+        <div className="relative flex h-2 w-2 items-center justify-center">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+        </div>
+        <span className="text-zinc-300 text-xs font-medium tracking-wide">
           {statuses[statusIdx]}
         </span>
       </div>
@@ -206,14 +206,12 @@ function IconFile({ className = "w-4 h-4" }: { className?: string }) {
 
 function AskitIcon({ className = "w-8 h-8" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <g transform="translate(32, 32)">
-        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" />
-        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(72)" />
-        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(144)" />
-        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(216)" />
-        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(288)" />
-      </g>
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M12 2L14.2 9.8L22 12L14.2 14.2L12 22L9.8 14.2L2 12L9.8 9.8L12 2Z"
+        className="fill-zinc-100"
+      />
+      <circle cx="12" cy="12" r="2.5" className="fill-zinc-950" />
     </svg>
   );
 }
