@@ -3,11 +3,16 @@ import { FeatureSection } from "@/components/ui/feature-section";
 import { VelocityScroll } from "@/components/ui/velocity-scroll";
 import { ScrollIndicator } from "@/components/ui/scroll-indicator";
 
-function AskitIcon({ className = "w-6 h-6" }: { className?: string }) {
+function AskitIcon({ className = "w-7 h-7" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 2L14.2 9.8L22 12L14.2 14.2L12 22L9.8 14.2L2 12L9.8 9.8L12 2Z" fill="currentColor" className="text-zinc-100" />
-      <circle cx="12" cy="12" r="2.5" className="fill-zinc-950" />
+    <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(32, 32)">
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" />
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(72)" />
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(144)" />
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(216)" />
+        <rect x="-4" y="-26" width="12" height="28" rx="6" fill="#ec4899" transform="rotate(288)" />
+      </g>
     </svg>
   );
 }
@@ -18,9 +23,10 @@ export default function LandingPage() {
       <ScrollIndicator />
       <header className="relative z-10 flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 md:px-12">
         <div className="flex items-center gap-2">
-          <AskitIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+          <AskitIcon className="w-7 h-7 sm:w-8 sm:h-8" />
           <span
-            className="text-lg font-bold font-logo text-zinc-100 antialiased"
+            className="text-lg tracking-tight"
+            style={{ fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontWeight: 700, color: "var(--neo-pink)" }}
           >
             Askit
           </span>

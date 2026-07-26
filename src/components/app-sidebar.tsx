@@ -277,11 +277,10 @@ export function AppSidebar({
             className="flex items-center gap-2.5 group"
             onClick={() => window.dispatchEvent(new CustomEvent("reset-chat"))}
           >
-            <svg className="w-5 h-5 shrink-0 text-zinc-100" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L14.2 9.8L22 12L14.2 14.2L12 22L9.8 14.2L2 12L9.8 9.8L12 2Z" fill="currentColor" />
-              <circle cx="12" cy="12" r="2.5" className="fill-zinc-950" />
+            <svg className="w-6 h-6 shrink-0 text-pink-500" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g transform="translate(32, 32)"><rect x="-4" y="-26" width="12" height="28" rx="6" fill="currentColor" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="currentColor" transform="rotate(72)" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="currentColor" transform="rotate(144)" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="currentColor" transform="rotate(216)" /><rect x="-4" y="-26" width="12" height="28" rx="6" fill="currentColor" transform="rotate(288)" /></g>
             </svg>
-            <span className="text-base font-bold text-zinc-100 font-logo antialiased select-none">
+            <span className="text-base font-bold tracking-tight text-zinc-100 font-sans antialiased select-none">
               Askit
             </span>
           </Link>
