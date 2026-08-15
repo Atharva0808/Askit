@@ -13,6 +13,28 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse; // Skip auth check if keys are missing
   }
 
+  // ── Classify route BEFORE any auth call ──
+  const isLanding = request.nextUrl.pathname === "/";
+  const isAuthCallback = request.nextUrl.pathname.startsWith("/auth/callback");
+  const isAuthPage =
+    request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup";
+
+  // Auth callback: pass through immediately (no auth check needed)
+  if (isAuthCallback) {
+    return supabaseResponse;
+  }
+
+  // Public pages (landing, login, signup): check for existing session cookie first.
+  // If no session cookies exist, skip the expensive getUser() call entirely — the
+  // user is definitely not logged in, so there's nothing to redirect.
+  const hasSessionCookie = request.cookies.getAll().some(
+    (c) => c.name.startsWith("sb-") && c.name.endsWith("-auth-token")
+  );
+
+  if ((isLanding || isAuthPage) && !hasSessionCookie) {
+    return supabaseResponse; // Fast path: no auth cookies → render page instantly
+  }
+
   const supabase = createServerClient(
     supabaseUrl,
     supabaseKey,
@@ -30,25 +52,19 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Add a timeout to auth check to prevent long hangs if Supabase is unreachable
+  // Shorter timeout for public pages (just checking if logged-in user should be
+  // redirected to /app), longer for protected pages where auth is mandatory.
+  const timeoutMs = (isLanding || isAuthPage) ? 3000 : 5000;
+
   const {
     data: { user },
   } = (await Promise.race([
     supabase.auth.getUser(),
-    new Promise((_, reject) => setTimeout(() => reject(new Error("Auth timeout")), 10000)),
+    new Promise((_, reject) => setTimeout(() => reject(new Error("Auth timeout")), timeoutMs)),
   ]).catch((err) => {
     console.error("[Auth] Session update timeout or error:", err);
     return { data: { user: null } };
   })) as { data: { user: any } };
-
-  const isLanding = request.nextUrl.pathname === "/";
-  const isAuthCallback = request.nextUrl.pathname.startsWith("/auth/callback");
-  const isAuthPage =
-    request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup";
-
-  if (isAuthCallback) {
-    return supabaseResponse;
-  }
 
   if (user) {
     if (isLanding || isAuthPage) {
