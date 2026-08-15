@@ -32,10 +32,10 @@ export default function LandingPage() {
           </span>
         </div>
         <nav className="flex items-center gap-1 sm:gap-2">
-          <Link href="/login" className="shimmer-btn px-3 sm:px-4 py-2 text-xs sm:text-sm text-white/70 border border-white/10 font-medium hover:text-white transition-all active:scale-[0.97] touch-manipulation">
+          <Link href="/login" className="px-3 sm:px-4 py-2 text-xs sm:text-sm text-white/50 hover:text-white transition-colors">
             Log in
           </Link>
-          <Link href="/signup" className="shimmer-btn px-3 sm:px-4 py-2 text-xs sm:text-sm bg-white text-black border-white/80 font-semibold hover:bg-gray-100 transition-all active:scale-[0.97] touch-manipulation">
+          <Link href="/signup" className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-white text-black rounded-lg font-medium hover:bg-gray-100 transition-colors active:scale-[0.97] touch-manipulation">
             Sign up
           </Link>
         </nav>
@@ -59,13 +59,13 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
             <Link
               href="/signup"
-              className="shimmer-btn w-full sm:w-auto px-8 py-3.5 sm:py-4 bg-white text-black border-white/80 font-semibold hover:bg-gray-100 hover:scale-105 transition-all outline-none active:scale-[0.97] touch-manipulation text-center"
+              className="w-full sm:w-auto px-8 py-3.5 sm:py-4 bg-white text-black font-semibold rounded-2xl hover:bg-gray-100 hover:scale-105 transition-all outline-none active:scale-[0.97] touch-manipulation text-center"
             >
               Get started free
             </Link>
             <Link
               href="/login"
-              className="shimmer-btn w-full sm:w-auto px-8 py-3.5 sm:py-4 font-medium border border-white/10 text-white/60 hover:text-white hover:bg-white/5 transition-all text-center active:scale-[0.97] touch-manipulation"
+              className="w-full sm:w-auto px-8 py-3.5 sm:py-4 font-medium rounded-2xl border border-white/10 text-white/50 hover:text-white hover:bg-white/5 transition-colors text-center active:scale-[0.97] touch-manipulation"
             >
               I have an account
             </Link>
